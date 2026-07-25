@@ -1,21 +1,35 @@
-import swaggerJSDoc from 'swagger-jsdoc';
-import path from 'path';
+import swaggerJsdoc from 'swagger-jsdoc';
 
-const options = {
+const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'API Óleo Circular',
+      title: 'API de Coleta de Óleo Circular',
       version: '1.0.0',
-      description: 'API para gestão de parceiros e pontos de coleta',
+      description: 'Sistema de gerenciamento Oleo Cicular',
     },
     servers: [
       {
-        url: `http://localhost:${process.env.PORT || 3000}`,
+        url: 'http://localhost:3000',
+        description: 'Servidor de Desenvolvimento',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
       },
     ],
   },
-  apis: [path.join(__dirname, '**/*.ts')],
+  apis: ['./src/infrastructure/http/routes/*.ts'],
 };
 
-export const swaggerSpec = swaggerJSDoc(options);
+export const swaggerSpec = swaggerJsdoc(options);

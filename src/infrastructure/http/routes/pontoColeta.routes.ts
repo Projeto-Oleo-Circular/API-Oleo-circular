@@ -1,15 +1,19 @@
 import { Router } from 'express';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
+import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { CriarPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/CriarPontoColetaUseCase';
 import { GetPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/GetPontoColetaUseCase';
 import { PontoColetaController } from '../controllers/PontoColetaController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
+import { GeocodingService } from '../../../infrastructure/services/GeocodingService';
 
 const router = Router();
 
 // Instanciar dependências
 const pontoColetaRepository = new SupabasePontoColetaRepository();
-const criarPontoColetaUseCase = new CriarPontoColetaUseCase(pontoColetaRepository);
+const parceiroRepository = new SupabaseParceiroRepository();
+const geocodingService = new GeocodingService();
+const criarPontoColetaUseCase = new CriarPontoColetaUseCase(pontoColetaRepository, parceiroRepository, geocodingService);
 const getPontoColetaUseCase = new GetPontoColetaUseCase(pontoColetaRepository);
 const pontoColetaController = new PontoColetaController(getPontoColetaUseCase);
 
@@ -19,7 +23,7 @@ const pontoColetaController = new PontoColetaController(getPontoColetaUseCase);
 
 /**
  * @openapi
- * /pontos-coleta/{id}:
+ * /pontos-coleta/pontos-coleta/{id}:
  *   get:
  *     summary: Buscar ponto de coleta por ID
  *     parameters:
@@ -61,7 +65,7 @@ router.get('/pontos-coleta/:id', async (req, res) => {
 
 /**
  * @openapi
- * /parceiros/pontos-coleta:
+ * /pontos-coleta/pontos-coleta:
  *   post:
  *     summary: Cadastro de ponto de coleta
  *     security:
@@ -117,7 +121,7 @@ router.post(
 
 /**
  * @openapi
- * /parceiros/pontos-coleta/meus:
+ * /pontos-coleta/meus:
  *   get:
  *     summary: Listar pontos de coleta do parceiro logado
  *     security:

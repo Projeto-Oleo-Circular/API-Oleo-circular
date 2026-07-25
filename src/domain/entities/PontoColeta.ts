@@ -1,15 +1,20 @@
+// domain/entities/PontoColeta.ts
 export interface PontoColeta {
   id: string;
   parceiroId: string;
-  nomePontoColeta: string;
   cep: string;
   logradouro: string;
   numero: string;
   bairro: string;
-  latitude: number | null;
-  longitude: number | null;
-  capacidadeBombona: number | null;
-  nivelAtualPct: number | null;
-  statusBombona: string;
-  statusAprovacaoPontoColeta: string;
+  cidade: string;
+  estado?: string | null;
+  complemento?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  capacidadeBombona: number;
+  nivelAtualPct: number;
+  statusBombona: 'VAZIA' | 'PARCIAL' | 'CHEIA' | 'EM_COLETA';
+  statusAprovacaoPontoColeta: 'PENDENTE' | 'APROVADO' | 'REJEITADO';
+  nomePontoColeta?: string | null;
+  criadoEm: string;
 }

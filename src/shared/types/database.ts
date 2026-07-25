@@ -13,6 +13,7 @@ export interface ParceiroRow {
   id: string;
   tipo_pessoa: string;
   nome_razao_social: string;
+  nome_social: string | null;
   email: string;
   senha_hash: string;
   documento: string;
@@ -25,6 +26,7 @@ export interface ParceiroRow {
   canal_aquisicao_id: string | null;
   expectativa_geracao: number | null;
   status_aprovacao_parceiro: string;
+//   observacoes: string | null;
   criado_em: string;
 }
 
@@ -42,6 +44,7 @@ export interface PontoColetaRow {
   nivel_atual_pct: number | null;
   status_bombona: string;
   status_aprovacao_ponto_coleta: string;
+//   observacoes: string | null;
 }
 
 export interface SolicitacaoColetaRow {

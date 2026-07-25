@@ -26,9 +26,8 @@ export class CriarParceiroUseCase {
     }
 
     // 3. Determinar tipo de pessoa
-    const tipoPessoa: 'FISICA' | 'JURIDICA' = data.tipoPessoa 
-      ? data.tipoPessoa 
-      : (data.tipoPerfil === 'SOLIDARIO' ? 'FISICA' : 'JURIDICA');
+    const tipoPessoa: 'FISICA' | 'JURIDICA' = data.tipoPessoa || 
+      (data.tipoPerfil === 'SOLIDARIO' ? 'FISICA' : 'JURIDICA');
 
     // 4. Determinar porte
     const porte = data.porte || this.determinarPorte(data.categoriaPerfil || 'Outros');
@@ -49,10 +48,8 @@ export class CriarParceiroUseCase {
       porte,
       aceiteMarketing: data.aceiteMarketing || false,
       parceiroIndicadorId: data.parceiroIndicadorId || null,
-    //   meioConhecimentoId: data.meioConhecimentoId || null,
       expectativaGeracao: data.expectativaGeracao || null,
       statusAprovacaoParceiro: 'PENDENTE' as const,
-    //   observacao: data.observacao || null,
       nomeSocial: null,
       redesSociais: null,
     };

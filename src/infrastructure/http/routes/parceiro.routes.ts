@@ -6,6 +6,7 @@ import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginPa
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
 import { ParceiroController } from '../controllers/ParceiroController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
+import axios from 'axios';
 
 const router = Router();
 
@@ -155,5 +156,72 @@ router.put(
     res.status(200).json({ message: 'Logout realizado com sucesso. Descarte o token no cliente.' });
   } );
 
+/**
+ * @openapi
+ * /parceiros/buscar-cep/{cep}:
+ *   get:
+ *     summary: Buscar endereço por CEP
+ *     parameters:
+ *       - in: path
+ *         name: cep
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Dados do endereço
+ */
+router.get('/buscar-cep/:cep', async (req, res) => {
+  try {
+    const { cep } = req.params;
+    const cepLimpo = cep.replace(/\D/g, '');
+    
+    if (cepLimpo.length !== 8) {
+      return res.status(400).json({ message: 'CEP inválido' });
+    }
 
+    const response = await axios.get(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+    
+    if (response.data.erro) {
+      return res.status(404).json({ message: 'CEP não encontrado' });
+    }
+
+    // Mapear dados do ViaCEP para nosso formato
+    const endereco = {
+      cep: response.data.cep.replace(/\D/g, ''),
+      logradouro: response.data.logradouro,
+      bairro: response.data.bairro,
+      cidade: response.data.localidade,
+      estado: response.data.uf,
+      complemento: response.data.complemento,
+      latitude: null,
+      longitude: null,
+    };
+
+    res.status(200).json(endereco);
+  } catch (error) {
+    console.error('Erro ao buscar CEP:', error);
+    res.status(500).json({ message: 'Erro ao buscar dados do CEP' });
+  }
+});
+
+// routes/parceiroRoutes.ts
+/**
+ * @openapi
+ * /parceiros/canais-aquisicao:
+ *   get:
+ *     summary: Listar canais de aquisição
+ *     responses:
+ *       200:
+ *         description: Lista de canais
+ */
+router.get('/canais-aquisicao', async (req, res) => {
+  try {
+    // Buscar canais do banco de dados
+    const canais = await parceiroRepository.getCanaisAquisicao();
+    res.status(200).json(canais);
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar canais de aquisição' });
+  }
+});
 export default router;

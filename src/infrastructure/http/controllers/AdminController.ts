@@ -1,15 +1,19 @@
 import { Request, Response } from 'express';
 import { LoginAdminUseCase } from '../../../domain/use-cases/admin/LoginAdminUseCase';
-import { AprovarParceiroUseCase } from '../../../domain/use-cases/admin/AprovarParceiroUseCase';
-import { AprovarPontoColetaUseCase } from '../../../domain/use-cases/admin/AprovarPontoColetaUseCase';
+import { AtualizarStatusParceiroUseCase } from '../../../domain/use-cases/admin/AtualizarStatusParceiroUseCase';
+import { AtualizarStatusPontoColetaUseCase } from '../../../domain/use-cases/admin/AtualizarStatusPontoColetaUseCase';
 import { ListarParceirosPendentesUseCase } from '../../../domain/use-cases/admin/ListarParceirosPendentesUseCase';
+import { ListarTodosParceirosUseCase } from '../../../domain/use-cases/admin/ListarTodosParceirosUseCase';
+import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/ListarTodosPontosUseCase';
 
 export class AdminController {
   constructor(
     private readonly loginAdminUseCase: LoginAdminUseCase,
-    private readonly aprovarParceiroUseCase: AprovarParceiroUseCase,
-    private readonly aprovarPontoColetaUseCase: AprovarPontoColetaUseCase,
+    private readonly atualizarStatusParceiroUseCase: AtualizarStatusParceiroUseCase,
+    private readonly atualizarStatusPontoColetaUseCase: AtualizarStatusPontoColetaUseCase,
     private readonly listarParceirosPendentesUseCase: ListarParceirosPendentesUseCase,
+    private readonly listarTodosParceirosUseCase: ListarTodosParceirosUseCase,
+    private readonly listarTodosPontosUseCase: ListarTodosPontosUseCase,
   ) {}
 
   async login(req: Request, res: Response): Promise<void> {
@@ -23,10 +27,22 @@ export class AdminController {
     }
   }
 
-  async aprovarParceiro(req: Request, res: Response): Promise<void> {
+  async atualizarStatusParceiro(req: Request, res: Response): Promise<void> {
     try {
       const parceiroId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const result = await this.aprovarParceiroUseCase.execute(parceiroId);
+      const { status, observacao } = req.body;
+
+      const allowedStatuses = ['APROVADO', 'REJEITADO', 'PENDENTE'] as const;
+      if (!allowedStatuses.includes(status)) {
+        throw new Error('Status inválido. Use APROVADO, REJEITADO ou PENDENTE.');
+      }
+
+      const result = await this.atualizarStatusParceiroUseCase.execute(
+        parceiroId,
+        status,
+        observacao,
+      );
+
       res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro inesperado';
@@ -34,10 +50,42 @@ export class AdminController {
     }
   }
 
-  async aprovarPonto(req: Request, res: Response): Promise<void> {
+  async atualizarStatusPonto(req: Request, res: Response): Promise<void> {
     try {
       const pontoId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const result = await this.aprovarPontoColetaUseCase.execute(pontoId);
+      const { status, observacao } = req.body;
+
+      const allowedStatuses = ['APROVADO', 'REJEITADO', 'PENDENTE'] as const;
+      if (!allowedStatuses.includes(status)) {
+        throw new Error('Status inválido. Use APROVADO, REJEITADO ou PENDENTE.');
+      }
+
+      const result = await this.atualizarStatusPontoColetaUseCase.execute(
+        pontoId,
+        status,
+        observacao,
+      );
+
+      res.status(200).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async listarParceiros(req: Request, res: Response): Promise<void> {
+    try {
+      const result = await this.listarTodosParceirosUseCase.execute();
+      res.status(200).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async listarPontos(req: Request, res: Response): Promise<void> {
+    try {
+      const result = await this.listarTodosPontosUseCase.execute();
       res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro inesperado';

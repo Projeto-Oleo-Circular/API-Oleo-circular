@@ -1,53 +1,95 @@
+// shared/dtos/parceiro/CriarParceiroDTO.ts
 import { z } from 'zod';
 
 export const CriarParceiroDTOSchema = z
   .object({
-    tipoPessoa: z.enum(['FISICA', 'JURIDICA']),
-    nomeRazaoSocial: z.string().min(3),
-    nomeSocial: z.string().min(3).optional(),
-    email: z.string().email(),
-    senha: z.string().min(6),
-    documento: z.string().min(11).max(14),
-    telefone: z.string().optional(),
-    porte: z.enum(['PEQUENO', 'MEDIO', 'GRANDE']),
-    aceiteMarketing: z.boolean(),
-    canalAquisicaoId: z.number().int().positive().optional(),
-    expectativaGeracao: z.number().positive().optional(),
-    responsavelLegalNome: z.string().min(3).optional(),
-    responsavelLegalCpf: z.string().length(11).optional(),
-    cep: z.string(),
-    logradouro: z.string().min(3),
-    numero: z.string().min(1),
-    bairro: z.string().min(2),
+    // Dados de Acesso (Tela 1)
+    nomeRazaoSocial: z.string().min(3, 'Nome completo é obrigatório'),
+    email: z.string().email('E-mail inválido'),
+    senha: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+    confirmarSenha: z.string().min(6, 'Confirmação da senha é obrigatória'),
+    telefone: z.string().min(10, 'Telefone inválido'),
+
+    // Perfil (Tela 2)
+    tipoPerfil: z.enum(['INSTITUCIONAL', 'COMUNITARIO', 'SOLIDARIO']).optional(),
+    categoriaPerfil: z.string().optional(),
+
+    // Informações (Tela 3)
+    documento: z.string().min(11, 'CNPJ/CPF inválido').max(14),
+    responsavelLegalNome: z.string().optional(),
+    responsavelLegalCpf: z.string().optional(),
+
+    // Endereço (Tela 3)
+    cep: z.string().min(8, 'CEP inválido'),
+    logradouro: z.string().min(3, 'Rua é obrigatória'),
+    numero: z.string().min(1, 'Número é obrigatório'),
+    bairro: z.string().min(2, 'Bairro é obrigatório'),
+    cidade: z.string().min(2, 'Cidade é obrigatória'),
+    estado: z.string().optional(),
+    complemento: z.string().optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
-    capacidadeBombona: z.number().positive(),
+
+    // Volume e Marketing (Tela 4)
+    aceiteMarketing: z.boolean().default(false),
+    expectativaGeracao: z.number().positive('Quantidade estimada deve ser maior que 0').optional(),
+    observacao: z.string().optional(),
+
+    // Quem indicou (parceiro indicador)
+    parceiroIndicadorId: z.number().int().positive().optional(),
+    // meioConhecimentoId: z.number().int().positive().optional(),
+
+    // Campos extras para compatibilidade com API
+    tipoPessoa: z.enum(['FISICA', 'JURIDICA']).optional(),
+    porte: z.enum(['PEQUENO', 'MEDIO', 'GRANDE']).optional(),
+    capacidadeBombona: z.number().positive().optional(),
+    aceiteTermos: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.tipoPessoa === 'JURIDICA') {
+    // Validação: senhas devem ser iguais
+    if (data.senha !== data.confirmarSenha) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmarSenha'],
+        message: 'As senhas não coincidem',
+      });
+    }
+
+    // Validação: tipo de documento baseado no perfil
+    if (data.tipoPerfil === 'INSTITUCIONAL' || data.tipoPerfil === 'COMUNITARIO') {
+      if (data.documento.length !== 14) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['documento'],
+          message: 'CNPJ inválido (deve ter 14 dígitos)',
+        });
+      }
+      
       if (!data.responsavelLegalNome?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['responsavelLegalNome'],
-          message: 'responsavelLegalNome é obrigatório para pessoas jurídicas',
+          message: 'Nome do responsável legal é obrigatório',
         });
       }
 
-      if (!data.responsavelLegalCpf?.trim()) {
+      if (!data.responsavelLegalCpf?.trim() || data.responsavelLegalCpf.length !== 11) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['responsavelLegalCpf'],
-          message: 'responsavelLegalCpf é obrigatório para pessoas jurídicas',
+          message: 'CPF do responsável legal é obrigatório',
         });
       }
     }
 
-    if (data.tipoPessoa === 'FISICA' && data.nomeSocial && data.nomeSocial.trim().length < 3) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['nomeSocial'],
-        message: 'nomeSocial deve ter pelo menos 3 caracteres quando informado',
-      });
+    if (data.tipoPerfil === 'SOLIDARIO') {
+      if (data.documento.length !== 11) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['documento'],
+          message: 'CPF inválido (deve ter 11 dígitos)',
+        });
+      }
     }
   });
 

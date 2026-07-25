@@ -3,9 +3,11 @@ import { SupabaseAdminRepository } from '../../../infrastructure/repositories/Su
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
 import { LoginAdminUseCase } from '../../../domain/use-cases/admin/LoginAdminUseCase';
-import { AprovarParceiroUseCase } from '../../../domain/use-cases/admin/AprovarParceiroUseCase';
-import { AprovarPontoColetaUseCase } from '../../../domain/use-cases/admin/AprovarPontoColetaUseCase';
+import { AtualizarStatusParceiroUseCase } from '../../../domain/use-cases/admin/AtualizarStatusParceiroUseCase';
+import { AtualizarStatusPontoColetaUseCase } from '../../../domain/use-cases/admin/AtualizarStatusPontoColetaUseCase';
 import { ListarParceirosPendentesUseCase } from '../../../domain/use-cases/admin/ListarParceirosPendentesUseCase';
+import { ListarTodosParceirosUseCase } from '../../../domain/use-cases/admin/ListarTodosParceirosUseCase';
+import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/ListarTodosPontosUseCase';
 import { AdminController } from '../controllers/AdminController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
 
@@ -18,16 +20,20 @@ const pontoColetaRepository = new SupabasePontoColetaRepository();
 
 // Instanciação dos Use Cases
 const loginAdminUseCase = new LoginAdminUseCase(adminRepository);
-const aprovarParceiroUseCase = new AprovarParceiroUseCase(parceiroRepository);
-const aprovarPontoColetaUseCase = new AprovarPontoColetaUseCase(pontoColetaRepository);
+const atualizarStatusParceiroUseCase = new AtualizarStatusParceiroUseCase(parceiroRepository, pontoColetaRepository);
+const atualizarStatusPontoColetaUseCase = new AtualizarStatusPontoColetaUseCase(pontoColetaRepository, parceiroRepository);
 const listarParceirosPendentesUseCase = new ListarParceirosPendentesUseCase(parceiroRepository);
+const listarTodosParceirosUseCase = new ListarTodosParceirosUseCase(parceiroRepository);
+const listarTodosPontosUseCase = new ListarTodosPontosUseCase(pontoColetaRepository);
 
 // Instanciação do Controller
 const adminController = new AdminController(
   loginAdminUseCase,
-  aprovarParceiroUseCase,
-  aprovarPontoColetaUseCase,
+  atualizarStatusParceiroUseCase,
+  atualizarStatusPontoColetaUseCase,
   listarParceirosPendentesUseCase,
+  listarTodosParceirosUseCase,
+  listarTodosPontosUseCase,
 );
 
 /**
@@ -150,9 +156,44 @@ router.get('/parceiros/pendentes', AuthMiddleware.verify, AuthMiddleware.require
 
 /**
  * @swagger
- * /admin/parceiros/{id}/aprovar:
- *   post:
- *     summary: Aprova um parceiro
+ * /admin/parceiros:
+ *   get:
+ *     summary: Lista todos os parceiros
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de parceiros
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   nomeRazaoSocial:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   statusAprovacaoParceiro:
+ *                     type: string
+ *                   observacao:
+ *                     type: string
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.get('/parceiros', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarParceiros(req, res));
+
+/**
+ * @swagger
+ * /admin/parceiros/{id}/status:
+ *   patch:
+ *     summary: Atualiza status e observação de um parceiro
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -163,9 +204,21 @@ router.get('/parceiros/pendentes', AuthMiddleware.verify, AuthMiddleware.require
  *         schema:
  *           type: string
  *         description: ID do parceiro
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [APROVADO, REJEITADO, PENDENTE]
+ *               observacao:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Parceiro aprovado com sucesso
+ *         description: Parceiro atualizado com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -173,25 +226,57 @@ router.get('/parceiros/pendentes', AuthMiddleware.verify, AuthMiddleware.require
  *               properties:
  *                 id:
  *                   type: string
- *                 nomeRazaoSocial:
+ *                 statusAprovacaoParceiro:
  *                   type: string
- *                 statusAprovacao:
+ *                 observacao:
  *                   type: string
- *                   example: APROVADO
  *       400:
- *         description: Parceiro não encontrado ou já aprovado
+ *         description: Dados inválidos ou parceiro não encontrado
  *       401:
  *         description: Não autenticado
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.post('/parceiros/:id/aprovar', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.aprovarParceiro(req, res));
+router.patch('/parceiros/:id/status', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarStatusParceiro(req, res));
 
 /**
  * @swagger
- * /admin/pontos/{id}/aprovar:
- *   post:
- *     summary: Aprova um ponto de coleta
+ * /admin/pontos:
+ *   get:
+ *     summary: Lista todos os pontos de coleta
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de pontos de coleta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   parceiroId:
+ *                     type: string
+ *                   statusAprovacaoPontoColeta:
+ *                     type: string
+ *                   observacao:
+ *                     type: string
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.get('/pontos', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarPontos(req, res));
+
+/**
+ * @swagger
+ * /admin/pontos/{id}/status:
+ *   patch:
+ *     summary: Atualiza status e observação de um ponto de coleta
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -202,9 +287,21 @@ router.post('/parceiros/:id/aprovar', AuthMiddleware.verify, AuthMiddleware.requ
  *         schema:
  *           type: string
  *         description: ID do ponto de coleta
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [APROVADO, REJEITADO, PENDENTE]
+ *               observacao:
+ *                 type: string
  *     responses:
  *       200:
- *         description: Ponto aprovado com sucesso
+ *         description: Ponto atualizado com sucesso
  *         content:
  *           application/json:
  *             schema:
@@ -212,18 +309,17 @@ router.post('/parceiros/:id/aprovar', AuthMiddleware.verify, AuthMiddleware.requ
  *               properties:
  *                 id:
  *                   type: string
- *                 endereco:
+ *                 statusAprovacaoPontoColeta:
  *                   type: string
- *                 statusAprovacao:
+ *                 observacao:
  *                   type: string
- *                   example: APROVADO
  *       400:
- *         description: Ponto não encontrado ou já aprovado
+ *         description: Dados inválidos ou ponto não encontrado
  *       401:
  *         description: Não autenticado
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.post('/pontos/:id/aprovar', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.aprovarPonto(req, res));
+router.patch('/pontos/:id/status', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarStatusPonto(req, res));
 
 export default router;

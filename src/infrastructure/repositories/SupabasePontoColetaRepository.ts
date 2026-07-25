@@ -1,122 +1,143 @@
+// infrastructure/repositories/SupabasePontoColetaRepository.ts
 import { PontoColeta } from '../../domain/entities/PontoColeta';
 import { IPontoColetaRepository } from '../../domain/repositories/IPontoColetaRepository';
 import { supabase } from '../../shared/config/supabase';
-import { PontoColetaRow } from '../../shared/types/database';
 
 export class SupabasePontoColetaRepository implements IPontoColetaRepository {
-  private readonly tableName = 'pontos_coleta';
+  async create(data: Omit<PontoColeta, 'id' | 'criadoEm'>): Promise<PontoColeta> {
+    const { data: result, error } = await supabase
+      .from('pontos_coleta')
+      .insert({
+        parceiro_id: data.parceiroId,
+        cep: data.cep,
+        logradouro: data.logradouro,
+        numero: data.numero,
+        bairro: data.bairro,
+        cidade: data.cidade,
+        estado: data.estado,
+        complemento: data.complemento,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        capacidade_bombona: data.capacidadeBombona,
+        nivel_atual_pct: data.nivelAtualPct,
+        status_bombona: data.statusBombona,
+        status_aprovacao_ponto_coleta: data.statusAprovacaoPontoColeta,
+        nome_ponto_coleta: data.nomePontoColeta,
+      })
+      .select()
+      .single();
 
-  async create(data: Omit<PontoColeta, 'id'>): Promise<PontoColeta> {
-    try {
-      const payload = this.toRow(data);
-      const { data: created, error } = await supabase
-        .from(this.tableName)
-        .insert(payload)
-        .select()
-        .single();
-
-      if (error) {
-        throw new Error(`Erro ao criar ponto de coleta: ${error.message}`);
-      }
-
-      return this.mapToEntity(created as PontoColetaRow);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado ao criar ponto de coleta';
-      throw new Error(message);
-    }
+    if (error) throw new Error(`Erro ao criar ponto de coleta: ${error.message}`);
+    
+    return this.mapToEntity(result);
   }
 
   async findById(id: string): Promise<PontoColeta | null> {
-    try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('pontos_coleta')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-      if (error) {
-        throw new Error(`Erro ao buscar ponto de coleta por id: ${error.message}`);
-      }
-
-      return data ? this.mapToEntity(data as PontoColetaRow) : null;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado ao buscar ponto de coleta por id';
-      throw new Error(message);
-    }
+    if (error) throw new Error(`Erro ao buscar ponto de coleta: ${error.message}`);
+    
+    return data ? this.mapToEntity(data) : null;
   }
 
   async findByParceiroId(parceiroId: string): Promise<PontoColeta[]> {
-    try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .select('*')
-        .eq('parceiro_id', parceiroId);
+    const { data, error } = await supabase
+      .from('pontos_coleta')
+      .select('*')
+      .eq('parceiro_id', parceiroId)
+      .order('criado_em', { ascending: false });
 
-      if (error) {
-        throw new Error(`Erro ao buscar pontos de coleta por parceiro: ${error.message}`);
-      }
-
-      return (data || []).map((item) => this.mapToEntity(item as PontoColetaRow));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado ao buscar pontos de coleta por parceiro';
-      throw new Error(message);
-    }
+    if (error) throw new Error(`Erro ao buscar pontos de coleta: ${error.message}`);
+    
+    return data ? data.map(this.mapToEntity) : [];
   }
 
   async update(id: string, data: Partial<PontoColeta>): Promise<PontoColeta> {
-    try {
-      const payload = this.toRow(data);
-      const { data: updated, error } = await supabase
-        .from(this.tableName)
-        .update(payload)
-        .eq('id', id)
-        .select()
-        .single();
+    const updateData: any = {};
+    
+    // Mapear campos que podem ser atualizados
+    if (data.cep !== undefined) updateData.cep = data.cep;
+    if (data.logradouro !== undefined) updateData.logradouro = data.logradouro;
+    if (data.numero !== undefined) updateData.numero = data.numero;
+    if (data.bairro !== undefined) updateData.bairro = data.bairro;
+    if (data.cidade !== undefined) updateData.cidade = data.cidade;
+    if (data.estado !== undefined) updateData.estado = data.estado;
+    if (data.complemento !== undefined) updateData.complemento = data.complemento;
+    if (data.latitude !== undefined) updateData.latitude = data.latitude;
+    if (data.longitude !== undefined) updateData.longitude = data.longitude;
+    if (data.capacidadeBombona !== undefined) updateData.capacidade_bombona = data.capacidadeBombona;
+    if (data.nivelAtualPct !== undefined) updateData.nivel_atual_pct = data.nivelAtualPct;
+    if (data.statusBombona !== undefined) updateData.status_bombona = data.statusBombona;
+    if (data.statusAprovacaoPontoColeta !== undefined) updateData.status_aprovacao_ponto_coleta = data.statusAprovacaoPontoColeta;
+    if (data.nomePontoColeta !== undefined) updateData.nome_ponto_coleta = data.nomePontoColeta;
 
-      if (error) {
-        throw new Error(`Erro ao atualizar ponto de coleta: ${error.message}`);
-      }
+    const { data: result, error } = await supabase
+      .from('pontos_coleta')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
 
-      return this.mapToEntity(updated as PontoColetaRow);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado ao atualizar ponto de coleta';
-      throw new Error(message);
-    }
+    if (error) throw new Error(`Erro ao atualizar ponto de coleta: ${error.message}`);
+    
+    return this.mapToEntity(result);
   }
 
-  private mapToEntity(row: PontoColetaRow): PontoColeta {
+  async updateStatusComObservacao(
+    id: string, 
+    status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
+    observacao: string | null
+  ): Promise<PontoColeta> {
+    const { data: result, error } = await supabase
+      .from('pontos_coleta')
+      .update({
+        status_aprovacao_ponto_coleta: status,
+        // Se tiver campo de observacao na tabela, adicionar aqui
+        // observacao: observacao
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw new Error(`Erro ao atualizar status do ponto de coleta: ${error.message}`);
+    
+    return this.mapToEntity(result);
+  }
+
+  async findAll(): Promise<PontoColeta[]> {
+    const { data, error } = await supabase
+      .from('pontos_coleta')
+      .select('*')
+      .order('criado_em', { ascending: false });
+
+    if (error) throw new Error(`Erro ao buscar todos os pontos de coleta: ${error.message}`);
+    
+    return data ? data.map(this.mapToEntity) : [];
+  }
+
+  private mapToEntity(data: any): PontoColeta {
     return {
-      id: row.id,
-      parceiroId: row.parceiro_id,
-      nomePontoColeta: row.nome_ponto_coleta,
-      cep: row.cep,
-      logradouro: row.logradouro,
-      numero: row.numero,
-      bairro: row.bairro,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      capacidadeBombona: row.capacidade_bombona,
-      nivelAtualPct: row.nivel_atual_pct,
-      statusBombona: row.status_bombona,
-      statusAprovacaoPontoColeta: row.status_aprovacao_ponto_coleta,
+      id: data.id,
+      parceiroId: data.parceiro_id,
+      cep: data.cep,
+      logradouro: data.logradouro,
+      numero: data.numero,
+      bairro: data.bairro,
+      cidade: data.cidade,
+      estado: data.estado,
+      complemento: data.complemento,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      capacidadeBombona: data.capacidade_bombona,
+      nivelAtualPct: data.nivel_atual_pct,
+      statusBombona: data.status_bombona,
+      statusAprovacaoPontoColeta: data.status_aprovacao_ponto_coleta,
+      nomePontoColeta: data.nome_ponto_coleta,
+      criadoEm: data.criado_em,
     };
-  }
-
-  private toRow(data: Partial<PontoColeta>): Partial<PontoColetaRow> {
-    const result: Partial<PontoColetaRow> = {};
-
-    if (data.parceiroId !== undefined) result.parceiro_id = data.parceiroId;
-    if (data.cep !== undefined) result.cep = data.cep;
-    if (data.logradouro !== undefined) result.logradouro = data.logradouro;
-    if (data.numero !== undefined) result.numero = data.numero;
-    if (data.bairro !== undefined) result.bairro = data.bairro;
-    if (data.latitude !== undefined) result.latitude = data.latitude;
-    if (data.longitude !== undefined) result.longitude = data.longitude;
-    if (data.capacidadeBombona !== undefined) result.capacidade_bombona = data.capacidadeBombona;
-    if (data.nivelAtualPct !== undefined) result.nivel_atual_pct = data.nivelAtualPct;
-    if (data.statusBombona !== undefined) result.status_bombona = data.statusBombona;
-    if (data.statusAprovacaoPontoColeta !== undefined) result.status_aprovacao_ponto_coleta = data.statusAprovacaoPontoColeta;
-
-    return result;
   }
 }

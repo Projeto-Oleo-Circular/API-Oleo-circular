@@ -26,7 +26,7 @@ export class LoginParceiroUseCase {
     }
 
     if (parceiro.statusAprovacaoParceiro !== 'APROVADO') {
-      throw new Error('Parceiro ainda não foi aprovado');
+      throw new Error('Seu cadastro ainda está pendente de aprovação pela cooperativa.');
     }
 
     const token = generate({ id: parceiro.id, email: parceiro.email, tipo: 'parceiro' });
