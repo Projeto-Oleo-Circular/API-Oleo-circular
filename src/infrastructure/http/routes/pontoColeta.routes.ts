@@ -1,30 +1,60 @@
 import { Router } from 'express';
+
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
+import { GeocodingService } from '../../../infrastructure/services/GeocodingService';
+
 import { CriarPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/CriarPontoColetaUseCase';
 import { GetPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/GetPontoColetaUseCase';
+
 import { PontoColetaController } from '../controllers/PontoColetaController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
-import { GeocodingService } from '../../../infrastructure/services/GeocodingService';
 
 const router = Router();
 
-// Instanciar dependências
+// ======================
+// DEPENDÊNCIAS
+// ======================
+
 const pontoColetaRepository = new SupabasePontoColetaRepository();
 const parceiroRepository = new SupabaseParceiroRepository();
 const geocodingService = new GeocodingService();
-const criarPontoColetaUseCase = new CriarPontoColetaUseCase(pontoColetaRepository, parceiroRepository, geocodingService);
-const getPontoColetaUseCase = new GetPontoColetaUseCase(pontoColetaRepository);
-const pontoColetaController = new PontoColetaController(getPontoColetaUseCase);
+
+const criarPontoColetaUseCase = new CriarPontoColetaUseCase(
+  pontoColetaRepository,
+//   parceiroRepository,
+//   geocodingService
+);
+
+const getPontoColetaUseCase = new GetPontoColetaUseCase(
+  pontoColetaRepository
+);
+
+const pontoColetaController = new PontoColetaController(
+  getPontoColetaUseCase
+);
 
 // ======================
-// ROTAS PÚBLICAS (ou abertas)
+// SWAGGER
+// ======================
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Ponto de Coleta
+ *     description: Operações relacionadas aos pontos de coleta
+ */
+
+// ======================
+// ROTAS PÚBLICAS
 // ======================
 
 /**
  * @openapi
- * /pontos-coleta/pontos-coleta/{id}:
+ * /pontos-coleta/{id}:
  *   get:
+ *     tags:
+ *       - Ponto de Coleta
  *     summary: Buscar ponto de coleta por ID
  *     parameters:
  *       - in: path
@@ -39,34 +69,42 @@ const pontoColetaController = new PontoColetaController(getPontoColetaUseCase);
  *       404:
  *         description: Ponto de coleta não encontrado
  */
-router.get('/pontos-coleta/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
     const pontoColeta = await pontoColetaRepository.findById(id);
 
     if (!pontoColeta) {
-      res.status(404).json({ message: 'Ponto de coleta não encontrado' });
-      return;
+      return res.status(404).json({
+        message: 'Ponto de coleta não encontrado',
+      });
     }
 
-    res.json(pontoColeta);
+    return res.status(200).json(pontoColeta);
   } catch (error) {
     if (error instanceof Error) {
-      res.status(400).json({ message: error.message });
-      return;
+      return res.status(400).json({
+        message: error.message,
+      });
     }
-    res.status(500).json({ message: 'Erro interno do servidor' });
+
+    return res.status(500).json({
+      message: 'Erro interno do servidor',
+    });
   }
 });
 
 // ======================
-// ROTAS PROTEGIDAS (APENAS PARCEIRO)
+// ROTAS PROTEGIDAS
 // ======================
 
 /**
  * @openapi
- * /pontos-coleta/pontos-coleta:
+ * /pontos-coleta:
  *   post:
+ *     tags:
+ *       - Ponto de Coleta
  *     summary: Cadastro de ponto de coleta
  *     security:
  *       - bearerAuth: []
@@ -77,8 +115,6 @@ router.get('/pontos-coleta/:id', async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               parceiroId:
- *                 type: string
  *               nomePontoColeta:
  *                 type: string
  *               cep:
@@ -89,32 +125,48 @@ router.get('/pontos-coleta/:id', async (req, res) => {
  *                 type: string
  *               bairro:
  *                 type: string
+ *               cidade:
+ *                 type: string
+ *               uf:
+ *                 type: string
+ *               latitude:
+ *                 type: number
+ *               longitude:
+ *                 type: number
  *               capacidadeBombona:
  *                 type: number
+ *               nivelAtualPct:
+ *                 type: number
+ *               statusBombona:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Ponto de coleta cadastrado com sucesso
  */
 router.post(
-  '/pontos-coleta',
+  '/',
   AuthMiddleware.verify,
   AuthMiddleware.requireRole('parceiro'),
   async (req, res) => {
     try {
-      // Adiciona o parceiroId automaticamente a partir do token
       const dados = {
         ...req.body,
-        parceiroId: req.user?.id
+        parceiroId: req.user?.id,
       };
 
       const result = await criarPontoColetaUseCase.execute(dados);
-      res.status(201).json(result);
+
+      return res.status(201).json(result);
     } catch (error) {
       if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-        return;
+        return res.status(400).json({
+          message: error.message,
+        });
       }
-      res.status(500).json({ message: 'Erro interno do servidor' });
+
+      return res.status(500).json({
+        message: 'Erro interno do servidor',
+      });
     }
   }
 );
@@ -123,6 +175,8 @@ router.post(
  * @openapi
  * /pontos-coleta/meus:
  *   get:
+ *     tags:
+ *       - Ponto de Coleta
  *     summary: Listar pontos de coleta do parceiro logado
  *     security:
  *       - bearerAuth: []
@@ -131,20 +185,28 @@ router.post(
  *         description: Lista de pontos de coleta do parceiro
  */
 router.get(
-  '/pontos-coleta/meus',
+  '/meus',
   AuthMiddleware.verify,
   AuthMiddleware.requireRole('parceiro'),
   async (req, res) => {
     try {
       const parceiroId = req.user?.id;
-      const pontos = await pontoColetaRepository.findByParceiroId(parceiroId!);
-      res.json(pontos);
+
+      const pontos = await pontoColetaRepository.findByParceiroId(
+        parceiroId!
+      );
+
+      return res.status(200).json(pontos);
     } catch (error) {
       if (error instanceof Error) {
-        res.status(400).json({ message: error.message });
-        return;
+        return res.status(400).json({
+          message: error.message,
+        });
       }
-      res.status(500).json({ message: 'Erro interno do servidor' });
+
+      return res.status(500).json({
+        message: 'Erro interno do servidor',
+      });
     }
   }
 );

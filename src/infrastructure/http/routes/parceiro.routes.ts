@@ -1,39 +1,62 @@
 import { Router } from 'express';
+import axios from 'axios';
+
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
+
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
+
 import { ParceiroController } from '../controllers/ParceiroController';
-import { AuthMiddleware } from '../middlewares/AuthMiddleware';
-import axios from 'axios';
+import {
+  AuthMiddleware,
+  loginLimiter,
+} from '../middlewares/AuthMiddleware';
 
 const router = Router();
 
-// Instanciar dependências
+// ======================
+// DEPENDÊNCIAS
+// ======================
+
 const parceiroRepository = new SupabaseParceiroRepository();
 const pontoColetaRepository = new SupabasePontoColetaRepository();
 
-const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
-const loginParceiroUseCase = new LoginParceiroUseCase(parceiroRepository);
-const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(parceiroRepository);
+const criarParceiroUseCase = new CriarParceiroUseCase(
+  parceiroRepository,
+  pontoColetaRepository
+);
 
-const parceiroController = new ParceiroController(getParceiroLogadoUseCase);
+const loginParceiroUseCase = new LoginParceiroUseCase(
+  parceiroRepository
+);
+
+const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(
+  parceiroRepository
+);
+
+const parceiroController = new ParceiroController(
+  getParceiroLogadoUseCase
+);
 
 // ======================
-// ROTAS PÚBLICAS
+// SWAGGER
 // ======================
 
 /**
- *  * @swagger
+ * @swagger
  * tags:
- *   name: Parceiro
- *   description: Módulo de parceiro e aprovações
- *   description: Módulo de  parceiro e aprovações
- *
+ *   - name: Parceiro
+ *     description: Operações relacionadas aos parceiros
+ */
+
+/**
  * @openapi
  * /parceiros/register:
  *   post:
+ *     tags:
+ *       - Parceiro
  *     summary: Cadastro de parceiro
  *     requestBody:
  *       required: true
@@ -75,10 +98,13 @@ const parceiroController = new ParceiroController(getParceiroLogadoUseCase);
 router.post('/register', async (req, res) => {
   try {
     const result = await criarParceiroUseCase.execute(req.body);
-    res.status(201).json(result);
+
+    return res.status(201).json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro inesperado';
-    res.status(400).json({ message });
+    const message =
+      error instanceof Error ? error.message : 'Erro inesperado';
+
+    return res.status(400).json({ message });
   }
 });
 
@@ -86,6 +112,8 @@ router.post('/register', async (req, res) => {
  * @openapi
  * /parceiros/login:
  *   post:
+ *     tags:
+ *       - Parceiro
  *     summary: Login de parceiro
  *     requestBody:
  *       required: true
@@ -101,25 +129,30 @@ router.post('/register', async (req, res) => {
  *     responses:
  *       200:
  *         description: Login realizado com sucesso
+ *       401:
+ *         description: Credenciais inválidas
+ *       429:
+ *         description: Muitas tentativas de login
  */
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const result = await loginParceiroUseCase.execute(req.body);
-    res.status(200).json(result);
+
+    return res.status(200).json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro inesperado';
-    res.status(401).json({ message });
+    const message =
+      error instanceof Error ? error.message : 'Erro inesperado';
+
+    return res.status(401).json({ message });
   }
 });
-
-// ======================
-// ROTAS PROTEGIDAS
-// ======================
 
 /**
  * @openapi
  * /parceiros/me:
  *   get:
+ *     tags:
+ *       - Parceiro
  *     summary: Dados do parceiro logado
  *     security:
  *       - bearerAuth: []
@@ -133,12 +166,13 @@ router.get(
   AuthMiddleware.requireRole('parceiro'),
   (req, res) => parceiroController.me(req, res)
 );
-
 /**
  * @openapi
  * /parceiros/logout:
  *   put:
- *     summary: Realiza logout do parceiro (invalida token no cliente)
+ *     tags:
+ *       - Parceiro
+ *     summary: Realiza logout do parceiro
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -149,17 +183,19 @@ router.put(
   '/logout',
   AuthMiddleware.verify,
   AuthMiddleware.requireRole('parceiro'),
-  (req, res) => {
-    // O logout no lado do servidor com JWT é feito invalidando o token no cliente.
-    // Como usamos JWT stateless, não há estado no servidor para invalidar.
-    // A melhor prática é apenas informar o cliente para descartar o token.
-    res.status(200).json({ message: 'Logout realizado com sucesso. Descarte o token no cliente.' });
-  } );
+  (_req, res) => {
+    return res.status(200).json({
+      message: 'Logout realizado com sucesso. Descarte o token no cliente.',
+    });
+  }
+);
 
 /**
  * @openapi
  * /parceiros/buscar-cep/{cep}:
  *   get:
+ *     tags:
+ *       - Parceiro
  *     summary: Buscar endereço por CEP
  *     parameters:
  *       - in: path
@@ -170,23 +206,32 @@ router.put(
  *     responses:
  *       200:
  *         description: Dados do endereço
+ *       400:
+ *         description: CEP inválido
+ *       404:
+ *         description: CEP não encontrado
  */
 router.get('/buscar-cep/:cep', async (req, res) => {
   try {
     const { cep } = req.params;
     const cepLimpo = cep.replace(/\D/g, '');
-    
+
     if (cepLimpo.length !== 8) {
-      return res.status(400).json({ message: 'CEP inválido' });
+      return res.status(400).json({
+        message: 'CEP inválido',
+      });
     }
 
-    const response = await axios.get(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-    
+    const response = await axios.get(
+      `https://viacep.com.br/ws/${cepLimpo}/json/`
+    );
+
     if (response.data.erro) {
-      return res.status(404).json({ message: 'CEP não encontrado' });
+      return res.status(404).json({
+        message: 'CEP não encontrado',
+      });
     }
 
-    // Mapear dados do ViaCEP para nosso formato
     const endereco = {
       cep: response.data.cep.replace(/\D/g, ''),
       logradouro: response.data.logradouro,
@@ -198,30 +243,14 @@ router.get('/buscar-cep/:cep', async (req, res) => {
       longitude: null,
     };
 
-    res.status(200).json(endereco);
+    return res.status(200).json(endereco);
   } catch (error) {
     console.error('Erro ao buscar CEP:', error);
-    res.status(500).json({ message: 'Erro ao buscar dados do CEP' });
+
+    return res.status(500).json({
+      message: 'Erro ao buscar dados do CEP',
+    });
   }
 });
 
-// routes/parceiroRoutes.ts
-/**
- * @openapi
- * /parceiros/canais-aquisicao:
- *   get:
- *     summary: Listar canais de aquisição
- *     responses:
- *       200:
- *         description: Lista de canais
- */
-router.get('/canais-aquisicao', async (req, res) => {
-  try {
-    // Buscar canais do banco de dados
-    const canais = await parceiroRepository.getCanaisAquisicao();
-    res.status(200).json(canais);
-  } catch (error) {
-    res.status(500).json({ message: 'Erro ao buscar canais de aquisição' });
-  }
-});
 export default router;

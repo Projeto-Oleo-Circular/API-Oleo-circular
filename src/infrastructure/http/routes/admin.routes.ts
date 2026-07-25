@@ -9,7 +9,7 @@ import { ListarParceirosPendentesUseCase } from '../../../domain/use-cases/admin
 import { ListarTodosParceirosUseCase } from '../../../domain/use-cases/admin/ListarTodosParceirosUseCase';
 import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/ListarTodosPontosUseCase';
 import { AdminController } from '../controllers/AdminController';
-import { AuthMiddleware } from '../middlewares/AuthMiddleware';
+import { AuthMiddleware, loginLimiter } from '../middlewares/AuthMiddleware';
 
 const router = Router();
 
@@ -84,7 +84,7 @@ const adminController = new AdminController(
  *       401:
  *         description: Credenciais inválidas
  */
-router.post('/login', (req, res) => adminController.login(req, res));
+router.post('/login', loginLimiter, async(req, res) => adminController.login(req, res));
 
 /**
  * @swagger
