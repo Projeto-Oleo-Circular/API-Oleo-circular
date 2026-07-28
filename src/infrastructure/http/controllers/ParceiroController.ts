@@ -1,8 +1,16 @@
 import { Request, Response } from 'express';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
+import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
 
 export class ParceiroController {
-  constructor(private readonly getParceiroLogadoUseCase: GetParceiroLogadoUseCase) {}
+  constructor(
+    private readonly getParceiroLogadoUseCase: GetParceiroLogadoUseCase,
+    private readonly verificarDisponibilidadeUseCase: VerificarDisponibilidadeUseCase
+  ) {
+    // Garante o binding dos métodos caso sejam passados como reference por desestruturação nas rotas do Express
+    this.me = this.me.bind(this);
+    this.verificarDisponibilidade = this.verificarDisponibilidade.bind(this);
+  }
 
   async me(req: Request, res: Response): Promise<void> {
     try {
@@ -14,8 +22,40 @@ export class ParceiroController {
       const parceiro = await this.getParceiroLogadoUseCase.execute(req.user.id);
       res.status(200).json(parceiro);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      const message =
+        error instanceof Error ? error.message : 'Erro inesperado';
+
       res.status(404).json({ message });
+    }
+  }
+
+  async verificarDisponibilidade(
+    req: Request,
+    res: Response
+  ): Promise<void> {
+    try {
+      const { email, documento } = req.query;
+
+      if (!this.verificarDisponibilidadeUseCase) {
+        res.status(500).json({ message: 'Erro interno: Dependência não inicializada' });
+        return;
+      }
+
+      const resultado =
+        await this.verificarDisponibilidadeUseCase.execute({
+          email: typeof email === 'string' ? email : undefined,
+          documento:
+            typeof documento === 'string' ? documento : undefined,
+        });
+
+      res.status(200).json(resultado);
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ message: error.message });
+        return;
+      }
+
+      res.status(500).json({ message: 'Erro interno do servidor' });
     }
   }
 }

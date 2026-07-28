@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import parceiroRoutes from './infrastructure/http/routes/parceiro.routes';
 import pontoColetaRoutes from './infrastructure/http/routes/pontoColeta.routes';
 import adminRoutes from './infrastructure/http/routes/admin.routes';
+import parceiroIndicadorRoutes from './infrastructure/http/routes/parceiroIndicador.routes';
 import { swaggerSpec } from './infrastructure/http/docs/swagger';
 
 dotenv.config();
@@ -65,6 +66,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/parceiros', parceiroRoutes);
 app.use('/pontos-coleta', pontoColetaRoutes);
 app.use('/admin', adminRoutes);
+app.use('/parceiros-indicadores', parceiroIndicadorRoutes);
 
 app.get('/health', (_req, res) => {
   res.status(200).json({

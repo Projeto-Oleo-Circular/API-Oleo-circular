@@ -7,6 +7,7 @@ import { SupabasePontoColetaRepository } from '../../../infrastructure/repositor
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
+import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase'; // <-- Importado
 
 import { ParceiroController } from '../controllers/ParceiroController';
 import {
@@ -36,9 +37,20 @@ const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(
   parceiroRepository
 );
 
-const parceiroController = new ParceiroController(
-  getParceiroLogadoUseCase
+// 1. Instanciar o UseCase faltante
+const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(
+  parceiroRepository
 );
+
+// 2. Passar AMBOS os casos de uso para o Controller
+const parceiroController = new ParceiroController(
+  getParceiroLogadoUseCase,
+  verificarDisponibilidadeUseCase
+);
+
+// ======================
+// SWAGGER / ROTAS
+// ======================
 
 // ======================
 // SWAGGER
@@ -251,6 +263,11 @@ router.get('/buscar-cep/:cep', async (req, res) => {
       message: 'Erro ao buscar dados do CEP',
     });
   }
-});
+}); // <-- Corrigido o fechamento correto da rota de CEP (removida a vírgula indevida)
+
+// Rota de verificação de disponibilidade corrigida e isolada
+router.get('/verificar-disponibilidade', (req, res) => 
+  parceiroController.verificarDisponibilidade(req, res)
+);
 
 export default router;
