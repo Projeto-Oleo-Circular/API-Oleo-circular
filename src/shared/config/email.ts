@@ -1,11 +1,13 @@
 export interface EmailConfig {
-  provider: 'resend';
+  provider: 'gmail';
   from: string;
-  resendApiKey: string;
+  gmailUser: string;
+  gmailAppPassword: string;
 }
 
 export const emailConfig: EmailConfig = {
-  provider: (process.env.EMAIL_PROVIDER as 'resend') || 'resend',
-  from: process.env.EMAIL_FROM || 'no-reply@onmail.resend.dev',
-  resendApiKey: process.env.RESEND_API_KEY || '',
+  provider: 'gmail',
+  from: process.env.GMAIL_USER || '',
+  gmailUser: process.env.GMAIL_USER || '',
+  gmailAppPassword: process.env.GMAIL_APP_PASSWORD || '',
 };

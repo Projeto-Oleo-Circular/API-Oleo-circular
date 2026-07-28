@@ -1,6 +1,6 @@
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
-import { EmailService } from '../../../infrastructure/services/EmailService';
+import { EmailService } from '../../../infrastructure/services/Email/EmailService';
 
 export class AtualizarStatusPontoColetaUseCase {
   constructor(
