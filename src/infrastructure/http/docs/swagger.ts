@@ -1,4 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -6,12 +9,15 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'API de Coleta de Óleo Circular',
       version: '1.0.0',
-      description: 'Sistema de gerenciamento Oleo Cicular',
+      description: 'Sistema de gerenciamento Óleo Circular',
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Servidor de Desenvolvimento',
+        url: process.env.API_URL,
+        description:
+          process.env.NODE_ENV === 'production'
+            ? 'Servidor de Produção'
+            : 'Servidor de Desenvolvimento',
       },
     ],
     components: {

@@ -3,10 +3,22 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://example.supabase.co';
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'dummy-anon-key';
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy-service-role-key';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// ✅ Corrigido: sem as opções de fetch, pois o Node 22+ já tem fetch nativo
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('ERRO CRÍTICO SUPABASE: Variáveis de ambiente não foram carregadas!');
+  console.error(`SUPABASE_URL: ${supabaseUrl ? 'OK' : 'AUSENTE'}`);
+  console.error(`SUPABASE_ANON_KEY: ${supabaseAnonKey ? 'OK' : 'AUSENTE'}`);
+}
+
+export const supabase = createClient(
+  supabaseUrl || '', 
+  supabaseAnonKey || ''
+);
+
+export const supabaseAdmin = createClient(
+  supabaseUrl || '', 
+  supabaseServiceRoleKey || supabaseAnonKey || ''
+);
