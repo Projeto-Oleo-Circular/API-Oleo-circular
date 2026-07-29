@@ -32,7 +32,7 @@ interface RenderEmailTemplateParams {
 }
 
 const COLORS = {
-  greenDark: '#0A8541',
+  greenDark: '#96b3a3',
   greenLight: '#40B86C',
   yellow: '#FEC92F',
   orange: '#EC8D20',

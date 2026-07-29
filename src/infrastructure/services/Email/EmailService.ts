@@ -27,7 +27,7 @@ export class EmailService {
   }: SendEmailParams): Promise<void> {
     try {
       await transporter.sendMail({
-        from: `Cooperativa <${emailConfig.from}>`,
+        from: `Oléo Circular <${emailConfig.from}>`,
         to,
         subject,
         html,
@@ -44,9 +44,9 @@ export class EmailService {
         ],
       });
 
-      console.log(`✅ E-mail enviado para ${to}`);
+      console.log(` E-mail enviado para ${to}`);
     } catch (error) {
-      console.error('❌ Erro ao enviar e-mail:', error);
+      console.error(' Erro ao enviar e-mail:', error);
       throw error;
     }
   }

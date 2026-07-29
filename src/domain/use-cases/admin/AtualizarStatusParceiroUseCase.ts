@@ -1,7 +1,7 @@
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
 import { EmailService } from '../../../infrastructure/services/Email/EmailService';
-
+import { renderParceiroStatusEmail } from '../../../infrastructure/services/Email/templates/parceiro.template';
 export class AtualizarStatusParceiroUseCase {
   constructor(
     private readonly parceiroRepository: IParceiroRepository,
@@ -28,15 +28,22 @@ export class AtualizarStatusParceiroUseCase {
       );
     }
 
-    EmailService.sendParceiroStatus(
-      parceiroAtualizado.email,
-      parceiroAtualizado.nomeRazaoSocial,
-      status,
-      status === 'REJEITADO' ? observacao : undefined,
-    ).catch((error) => {
-      console.error('Erro ao enviar e-mail de status do parceiro:', error);
-    });
+    // Substitua a chamada antiga do EmailService por esta:
+    try {
+      const template = renderParceiroStatusEmail({
+        nome: parceiroAtualizado.nomeRazaoSocial,
+        status: status,
+        observacao: status === 'REJEITADO' ? observacao : undefined,
+      });
 
+      await EmailService.send({
+        to: parceiroAtualizado.email,
+        subject: template.subject,
+        html: template.html,
+      });
+    } catch (error) {
+      console.error('Erro ao enviar e-mail de status do parceiro:', error);
+    }
     return {
       id: parceiroAtualizado.id,
       nomeRazaoSocial: parceiroAtualizado.nomeRazaoSocial,

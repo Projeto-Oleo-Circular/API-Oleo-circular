@@ -1,6 +1,7 @@
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import { EmailService } from '../../../infrastructure/services/Email/EmailService';
+import { renderParceiroStatusEmail } from '../../../infrastructure/services/Email/templates/parceiro.template';
 
 export class AtualizarStatusPontoColetaUseCase {
   constructor(
@@ -8,27 +9,47 @@ export class AtualizarStatusPontoColetaUseCase {
     private readonly parceiroRepository: IParceiroRepository,
   ) {}
 
-  async execute(pontoColetaId: string, status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', observacao?: string) {
+  async execute(
+    pontoColetaId: string,
+    status: 'APROVADO' | 'REJEITADO' | 'PENDENTE',
+    observacao?: string,
+  ) {
     const ponto = await this.pontoColetaRepository.findById(pontoColetaId);
 
     if (!ponto) {
       throw new Error('Ponto de coleta não encontrado');
     }
 
-    const pontoAtualizado = await this.pontoColetaRepository.updateStatusComObservacao(pontoColetaId, status, observacao ?? null);
-    const parceiro = await this.parceiroRepository.findById(pontoAtualizado.parceiroId);
+    const pontoAtualizado =
+      await this.pontoColetaRepository.updateStatusComObservacao(
+        pontoColetaId,
+        status,
+        observacao ?? null,
+      );
+
+    const parceiro = await this.parceiroRepository.findById(
+      pontoAtualizado.parceiroId,
+    );
 
     if (parceiro) {
-      const endereco = `${pontoAtualizado.logradouro}, ${pontoAtualizado.bairro}`;
-      EmailService.sendPontoStatus(
-        parceiro.email,
-        parceiro.nomeRazaoSocial,
-        endereco,
-        status,
-        status === 'REJEITADO' ? observacao : undefined,
-      ).catch((error) => {
+      try {
+        const endereco = `${pontoAtualizado.logradouro}, ${pontoAtualizado.bairro}`;
+        
+        // Se você já tiver um template para ponto de coleta, utilize-o:
+        const template = renderParceiroStatusEmail({
+          nome: parceiro.nomeRazaoSocial,
+          status,
+          observacao: status === 'REJEITADO' ? observacao : undefined,
+        });
+
+        await EmailService.send({
+          to: parceiro.email,
+          subject: template.subject,
+          html: template.html,
+        });
+      } catch (error) {
         console.error('Erro ao enviar e-mail de status de ponto:', error);
-      });
+      }
     }
 
     return {
