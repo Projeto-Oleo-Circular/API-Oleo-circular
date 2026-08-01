@@ -1,5 +1,6 @@
+// domain/use-cases/ponto-coleta/CriarPontoColetaUseCase.ts
+
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
-import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import {
   CriarPontoColetaDTO,
   CriarPontoColetaDTOSchema,
@@ -12,6 +13,7 @@ export class CriarPontoColetaUseCase {
   ) {}
 
   async execute(input: CriarPontoColetaDTO) {
+    // 1. Validação do DTO usando Zod
     const parsed = CriarPontoColetaDTOSchema.safeParse(input);
 
     if (!parsed.success) {
@@ -22,24 +24,25 @@ export class CriarPontoColetaUseCase {
 
     const data = parsed.data;
 
-    const pontoColetaParaCriar: Omit<PontoColeta, 'id'> = {
+    // 2. Montagem do objeto omitindo 'id' e 'criadoEm', pois o DB cuida disso
+    const pontoColetaParaCriar: Omit<PontoColeta, 'id' | 'criadoEm'> = {
       parceiroId: data.parceiroId,
-      nomePontoColeta: data.nomePontoColeta,
+      nomePontoColeta: data.nomePontoColeta ?? `Ponto Secundário`, // Nome default caso não venha
       cep: data.cep,
       logradouro: data.logradouro,
       numero: data.numero,
       bairro: data.bairro,
       cidade: data.cidade,
       estado: data.estado,
-      latitude: data.latitude,
-      longitude: data.longitude,
+      complemento: data.complemento,
       capacidadeBombona: data.capacidadeBombona,
-      nivelAtualPct: data.nivelAtualPct,
-      statusBombona: data.statusBombona,
-      statusAprovacaoPontoColeta: 'PENDENTE',
-      criadoEm: new Date().toISOString(),
+      expectativaGeracao: data.expectativaGeracao,
+      nivelAtualPct: data.nivelAtualPct ?? 0, // Inicia vazio
+      statusBombona: data.statusBombona ?? 'VAZIA', // Inicia vazia
+      statusAprovacaoPontoColeta: 'PENDENTE', // Requer aprovação do admin
     };
 
+    // 3. Persistência
     return await this.pontoColetaRepository.create(pontoColetaParaCriar);
   }
 }

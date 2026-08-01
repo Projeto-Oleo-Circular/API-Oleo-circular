@@ -4,27 +4,25 @@ import { IParceiroRepository } from '../../domain/repositories/IParceiroReposito
 import { supabase } from '../../shared/config/supabase';
 
 export class SupabaseParceiroRepository implements IParceiroRepository {
-  async create(data: Omit<Parceiro, 'id' | 'criadoEm'>): Promise<Parceiro> {
+  async create(data: any): Promise<Parceiro> { // 'any' usado aqui temporariamente se o DTO divergir da Entidade
     const { data: result, error } = await supabase
       .from('parceiros')
       .insert({
         tipo_pessoa: data.tipoPessoa,
+        tipo_parceiro: data.tipoParceiro, // Adicionado conforme o banco
         nome_razao_social: data.nomeRazaoSocial,
+        nome_social: data.nomeSocial, // Descomentado
         email: data.email,
         senha_hash: data.senhaHash,
         documento: data.documento,
         telefone: data.telefone,
         responsavel_legal_nome: data.responsavelLegalNome,
         responsavel_legal_cpf: data.responsavelLegalCpf,
-        porte: data.porte,
         aceite_marketing: data.aceiteMarketing,
         parceiro_indicador_id: data.parceiroIndicadorId,
-        // meio_conhecimento_id: data.meioConhecimentoId,
-        expectativa_geracao: data.expectativaGeracao,
         status_aprovacao_parceiro: data.statusAprovacaoParceiro || 'PENDENTE',
-        // observacao: data.observacao,
         redes_sociais: data.redesSociais,
-        // nome_social: data.nomeSocial,
+        // Removidos 'porte' e 'expectativa_geracao' pois não existem na tabela parceiros
       })
       .select()
       .single();
@@ -46,7 +44,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findById(id: string): Promise<Parceiro | null> {
+  async findById(id: string | number): Promise<Parceiro | null> {
     const { data, error } = await supabase
       .from('parceiros')
       .select('*')
@@ -70,21 +68,18 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
     return data ? this.mapToEntity(data) : null;
   }
 
-  async update(id: string, data: Partial<Parceiro>): Promise<Parceiro> {
+  async update(id: string | number, data: Partial<any>): Promise<Parceiro> {
     const updateData: any = {};
     if (data.nomeRazaoSocial !== undefined) updateData.nome_razao_social = data.nomeRazaoSocial;
+    if (data.nomeSocial !== undefined) updateData.nome_social = data.nomeSocial;
     if (data.telefone !== undefined) updateData.telefone = data.telefone;
     if (data.statusAprovacaoParceiro !== undefined) updateData.status_aprovacao_parceiro = data.statusAprovacaoParceiro;
-    // if (data.observacao !== undefined) updateData.observacao = data.observacao;
     if (data.parceiroIndicadorId !== undefined) updateData.parceiro_indicador_id = data.parceiroIndicadorId;
-    // if (data.meioConhecimentoId !== undefined) updateData.meio_conhecimento_id = data.meioConhecimentoId;
-    if (data.expectativaGeracao !== undefined) updateData.expectativa_geracao = data.expectativaGeracao;
     if (data.aceiteMarketing !== undefined) updateData.aceite_marketing = data.aceiteMarketing;
-    if (data.porte !== undefined) updateData.porte = data.porte;
     if (data.responsavelLegalNome !== undefined) updateData.responsavel_legal_nome = data.responsavelLegalNome;
     if (data.responsavelLegalCpf !== undefined) updateData.responsavel_legal_cpf = data.responsavelLegalCpf;
-    if (data.nomeSocial !== undefined) updateData.nome_social = data.nomeSocial;
     if (data.redesSociais !== undefined) updateData.redes_sociais = data.redesSociais;
+    if (data.tipoParceiro !== undefined) updateData.tipo_parceiro = data.tipoParceiro;
 
     const { data: result, error } = await supabase
       .from('parceiros')
@@ -99,7 +94,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
   }
 
   async updateStatusComObservacao(
-    id: string, 
+    id: string | number, 
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
     observacao: string | null
   ): Promise<Parceiro> {
@@ -107,7 +102,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .from('parceiros')
       .update({
         status_aprovacao_parceiro: status,
-        observacao: observacao,
+        // observacao: observacao, // Comentado, pois 'observacao' não existe na sua tabela SQL de parceiros!
       })
       .eq('id', id)
       .select()
@@ -156,6 +151,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
     return {
       id: data.id,
       tipoPessoa: data.tipo_pessoa,
+      tipoParceiro: data.tipo_parceiro, 
       nomeRazaoSocial: data.nome_razao_social,
       nomeSocial: data.nome_social,
       email: data.email,
@@ -164,15 +160,11 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       telefone: data.telefone,
       responsavelLegalNome: data.responsavel_legal_nome,
       responsavelLegalCpf: data.responsavel_legal_cpf,
-      porte: data.porte,
       redesSociais: data.redes_sociais,
       aceiteMarketing: data.aceite_marketing,
       parceiroIndicadorId: data.parceiro_indicador_id,
-    //   meioConhecimentoId: data.meio_conhecimento_id,
-      expectativaGeracao: data.expectativa_geracao,
       statusAprovacaoParceiro: data.status_aprovacao_parceiro,
-    //   observacao: data.observacao,
       criadoEm: data.criado_em,
-    };
+    } as Parceiro;
   }
 }

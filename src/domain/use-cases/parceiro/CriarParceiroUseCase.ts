@@ -1,17 +1,16 @@
-// domain/use-cases/parceiro/CriarParceiroUseCase.ts
-
 import bcrypt from 'bcrypt';
-
 import { CriarParceiroDTO } from '../../../shared/dtos/parceiro/CriarParceiroDTO';
-
-import { Parceiro } from '../../entities/Parceiro';
+import {
+  ParceiroFisica,
+  ParceiroJuridica,
+  Parceiro // Certifique-se de exportar isso nas entidades se necessário
+} from '../../entities/Parceiro';
 import { PontoColeta } from '../../entities/PontoColeta';
-
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
-
 import { EmailService } from '../../../infrastructure/services/Email/EmailService';
 import { renderParceiroStatusEmail } from '../../../infrastructure/services/Email/templates/parceiro.template';
+import { Documento } from '../../value-objects/Documento';
 
 export class CriarParceiroUseCase {
   constructor(
@@ -20,161 +19,158 @@ export class CriarParceiroUseCase {
   ) {}
 
   async execute(data: CriarParceiroDTO) {
-    // 1. Validar e-mail
-    const emailExists = await this.parceiroRepository.findByEmail(data.email);
+    await this.validarUnicidade(data.email, data.documento);
 
-    if (emailExists) {
-      throw new Error('E-mail já cadastrado');
+    if (!data.tipoPessoa) {
+      throw new Error('Tipo de pessoa é obrigatório');
     }
 
-    // 2. Validar documento
-    const documentExists = await this.parceiroRepository.findByDocumento(
-      data.documento
-    );
+    const tipoPessoa = data.tipoPessoa;
 
-    if (documentExists) {
-      throw new Error('Documento já cadastrado');
-    }
+    this.validarDadosPorTipoPessoa(tipoPessoa, data);
 
-    // 3. Tipo da pessoa
-    const tipoPessoa: 'FISICA' | 'JURIDICA' = data.tipoPessoa
-      ? data.tipoPessoa
-      : data.tipoPerfil === 'SOLIDARIO'
-      ? 'FISICA'
-      : 'JURIDICA';
-
-    // 4. Porte
-    const porte =
-      data.porte ??
-      this.determinarPorte(data.categoriaPerfil ?? 'Outros');
-
-    // 5. Hash da senha
     const senhaHash = await bcrypt.hash(data.senha, 10);
 
-    // 6. Criar parceiro
-    const parceiroData: Omit<Parceiro, 'id' | 'criadoEm'> = {
-      tipoPessoa,
-      nomeRazaoSocial: data.nomeRazaoSocial,
-      email: data.email,
-      senhaHash,
-      documento: data.documento,
-      telefone: data.telefone ?? null,
-      responsavelLegalNome: data.responsavelLegalNome ?? null,
-      responsavelLegalCpf: data.responsavelLegalCpf ?? null,
-      porte,
-      aceiteMarketing: data.aceiteMarketing ?? false,
-      parceiroIndicadorId: data.parceiroIndicadorId ?? null,
-      expectativaGeracao: data.expectativaGeracao ?? null,
-      statusAprovacaoParceiro: 'PENDENTE',
-      nomeSocial: null,
-      redesSociais: null,
-    };
+    let parceiroData: Omit<ParceiroFisica, 'id' | 'criadoEm'> | Omit<ParceiroJuridica, 'id' | 'criadoEm'>;
 
-    const parceiro =
-      await this.parceiroRepository.create(parceiroData);
+    if (tipoPessoa === 'FISICA') {
+      parceiroData = {
+        tipoPessoa: 'FISICA',
+        tipoParceiro: data.tipoParceiro ?? 'SOLIDARIO',
+        nomeRazaoSocial: data.nomeRazaoSocial,
+        nomeSocial: data.nomeSocial ?? null,
+        email: data.email,
+        senhaHash,
+        documento: data.documento,
+        telefone: data.telefone ?? null,
+        redesSociais: data.redesSociais ?? null,
+        aceiteMarketing: data.aceiteMarketing ?? false,
+        parceiroIndicadorId: data.parceiroIndicadorId,
+        statusAprovacaoParceiro: 'PENDENTE',
+      };
+    } else {
+      parceiroData = {
+        tipoPessoa: 'JURIDICA',
+        tipoParceiro: data.tipoParceiro ?? 'INSTITUCIONAL',
+        nomeRazaoSocial: data.nomeRazaoSocial,
+        nomeSocial: data.nomeSocial ?? null,
+        email: data.email,
+        senhaHash,
+        documento: data.documento,
+        telefone: data.telefone ?? null,
+        redesSociais: data.redesSociais ?? null,
+        aceiteMarketing: data.aceiteMarketing ?? false,
+        parceiroIndicadorId: data.parceiroIndicadorId,
+        statusAprovacaoParceiro: 'PENDENTE',
+        responsavelLegalNome: data.responsavelLegalNome!,
+        responsavelLegalCpf: data.responsavelLegalCpf!,
+      };
+    }
 
-    // 7. Criar ponto de coleta
+    const parceiro = await this.parceiroRepository.create(parceiroData);
 
     const capacidadeBombona =
       data.capacidadeBombona ??
-      this.determinarCapacidade(porte);
+      this.determinarCapacidade(data.tipoPorte ?? 'MEDIO');
 
     const pontoColetaData: Omit<PontoColeta, 'id' | 'criadoEm'> = {
       parceiroId: parceiro.id,
-
       cep: data.cep,
       logradouro: data.logradouro,
       numero: data.numero,
       bairro: data.bairro,
       cidade: data.cidade ?? 'Não informado',
-      estado: data.estado ?? null,
-      complemento: data.complemento ?? null,
-
-      latitude: data.latitude ?? null,
-      longitude: data.longitude ?? null,
-
+      estado: data.estado,
+      complemento: data.complemento,
       capacidadeBombona,
       nivelAtualPct: 0,
-
       statusBombona: 'VAZIA',
       statusAprovacaoPontoColeta: 'PENDENTE',
-
       nomePontoColeta: `Ponto ${data.nomeRazaoSocial}`,
+      
     };
 
-    await this.pontoColetaRepository.create(pontoColetaData);
+    const pontoColeta =
+      await this.pontoColetaRepository.create(pontoColetaData);
 
-    /**
-     * Envia o e-mail de cadastro em análise.
-     *
-     * O envio do e-mail não deve impedir o cadastro caso ocorra algum erro.
-     */
-    try {
-      const template = renderParceiroStatusEmail({
-        nome: parceiro.nomeRazaoSocial,
-        status: 'PENDENTE',
-      });
+    this.enviarEmailConfirmacao(parceiro).catch((err) => {
+      console.error('Erro ao enviar e-mail:', err);
+    });
 
-      await EmailService.send({
-        to: parceiro.email,
-        subject: template.subject,
-        html: template.html,
-      });
-    } catch (error) {
-      console.error(
-        'Erro ao enviar e-mail de confirmação:',
-        error
-      );
-    }
-
-    // 8. Retorno
-
-    const { senhaHash: _, ...parceiroSemSenha } = parceiro;
+    // const { senhaHash: _, ...parceiroSemSenha } = parceiro;
 
     return {
-      ...parceiroSemSenha,
-
+    //   ...parceiroSemSenha,
       mensagem:
         'Cadastro realizado com sucesso! Aguarde a aprovação da equipe.',
-
-      pontoColeta: pontoColetaData,
+    //   pontoColeta,
     };
   }
 
-  private determinarPorte(
-    categoria: string
-  ): 'PEQUENO' | 'MEDIO' | 'GRANDE' {
-    const portes: Record<
-      string,
-      'PEQUENO' | 'MEDIO' | 'GRANDE'
-    > = {
-      'Cozinha Industrial': 'GRANDE',
-      'Empresa / Industria': 'GRANDE',
-      'Escolas / Universidade': 'MEDIO',
-      'Hospital / Unidade de Saúde': 'GRANDE',
-      'Hotel / Pousada': 'GRANDE',
-      'Restaurante / Bar': 'MEDIO',
-      Condomínio: 'MEDIO',
-      'Unidade de Saúde': 'GRANDE',
-      'Feira Livre': 'MEDIO',
-      'Evento Fechado': 'MEDIO',
-      'Pessoa Física': 'PEQUENO',
-      'Doador Avulso': 'PEQUENO',
-      Outros: 'PEQUENO',
-    };
+  private async validarUnicidade(email: string, documento: string) {
+    const emailExiste = await this.parceiroRepository.findByEmail(email);
 
-    return portes[categoria] ?? 'PEQUENO';
+    if (emailExiste) {
+      throw new Error('E-mail já cadastrado');
+    }
+
+    const documentoExiste =
+      await this.parceiroRepository.findByDocumento(documento);
+
+    if (documentoExiste) {
+      throw new Error('Documento já cadastrado');
+    }
   }
 
-  private determinarCapacidade(
-    porte: 'PEQUENO' | 'MEDIO' | 'GRANDE'
-  ): number {
-    const capacidades = {
-      PEQUENO: 100,
-      MEDIO: 500,
-      GRANDE: 1000,
+  private validarDadosPorTipoPessoa(
+    tipoPessoa: 'FISICA' | 'JURIDICA',
+    data: CriarParceiroDTO
+  ) {
+    let documento;
+    try {
+      documento = new Documento(data.documento);
+    } catch (error) {
+      throw new Error('Documento inválido: ' + (error as Error).message);
+    }
+
+    if (tipoPessoa === 'FISICA' && documento.getTipo() !== 'CPF') {
+      throw new Error('Pessoa Física deve ter um CPF como documento.');
+    }
+    if (tipoPessoa === 'JURIDICA' && documento.getTipo() !== 'CNPJ') {
+      throw new Error('Pessoa Jurídica deve ter um CNPJ como documento.');
+    }
+
+    if (data.responsavelLegalCpf) {
+      try {
+        const cpfResponsavel = new Documento(data.responsavelLegalCpf);
+        if (cpfResponsavel.getTipo() !== 'CPF') {
+          throw new Error('CPF do responsável legal inválido.');
+        }
+      } catch (error) {
+        throw new Error('CPF do responsável legal inválido: ' + (error as Error).message);
+      }
+    }
+  }
+
+  private determinarCapacidade(porte: string): number {
+    const capacidades: Record<string, number> = {
+      PEQUENO: 10,
+      MEDIO: 20,
+      GRANDE: 30,
     };
 
-    return capacidades[porte];
+    return capacidades[porte] ?? 20;
   }
-}
+
+ private async enviarEmailConfirmacao(parceiro: { nomeRazaoSocial: string; email: string }) {
+    const template = renderParceiroStatusEmail({
+      nome: parceiro.nomeRazaoSocial,
+      status: 'PENDENTE',
+    });
+
+    await EmailService.send({
+      to: parceiro.email,
+      subject: template.subject,
+      html: template.html,
+    });
+  }}

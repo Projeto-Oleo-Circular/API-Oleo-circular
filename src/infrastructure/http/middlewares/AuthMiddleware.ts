@@ -9,7 +9,7 @@ import { verify } from '../../../shared/utils/jwt-utils';
 // ======================
 
 export interface AuthenticatedUser {
-  id: string;
+  id: number;
   email: string;
   tipo: 'parceiro' | 'admin';
 }
@@ -27,7 +27,7 @@ declare global {
 // ======================
 
 const authenticatedUserSchema = z.object({
-  id: z.string(),
+  id: z.number().int(),
   email: z.string().email(),
   tipo: z.enum(['parceiro', 'admin']),
 });
@@ -38,7 +38,7 @@ const authenticatedUserSchema = z.object({
 
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5,                   // 5 tentativas
+  max: 1000,                   // 5 tentativas
   standardHeaders: true,
   legacyHeaders: false,
   message: {

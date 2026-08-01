@@ -16,13 +16,13 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
         cidade: data.cidade,
         estado: data.estado,
         complemento: data.complemento,
-        latitude: data.latitude,
-        longitude: data.longitude,
+        expectativa_geracao: data.expectativaGeracao, // Adicionado!
         capacidade_bombona: data.capacidadeBombona,
         nivel_atual_pct: data.nivelAtualPct,
         status_bombona: data.statusBombona,
         status_aprovacao_ponto_coleta: data.statusAprovacaoPontoColeta,
         nome_ponto_coleta: data.nomePontoColeta,
+        // Removidos 'latitude' e 'longitude' pois não existem na tabela do banco
       })
       .select()
       .single();
@@ -32,7 +32,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     return this.mapToEntity(result);
   }
 
-  async findById(id: string): Promise<PontoColeta | null> {
+  async findById(id: string | number): Promise<PontoColeta | null> {
     const { data, error } = await supabase
       .from('pontos_coleta')
       .select('*')
@@ -44,7 +44,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findByParceiroId(parceiroId: string): Promise<PontoColeta[]> {
+  async findByParceiroId(parceiroId: number| string): Promise<PontoColeta[]> {
     const { data, error } = await supabase
       .from('pontos_coleta')
       .select('*')
@@ -56,10 +56,9 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     return data ? data.map(this.mapToEntity) : [];
   }
 
-  async update(id: string, data: Partial<PontoColeta>): Promise<PontoColeta> {
+  async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoColeta> {
     const updateData: any = {};
     
-    // Mapear campos que podem ser atualizados
     if (data.cep !== undefined) updateData.cep = data.cep;
     if (data.logradouro !== undefined) updateData.logradouro = data.logradouro;
     if (data.numero !== undefined) updateData.numero = data.numero;
@@ -67,8 +66,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     if (data.cidade !== undefined) updateData.cidade = data.cidade;
     if (data.estado !== undefined) updateData.estado = data.estado;
     if (data.complemento !== undefined) updateData.complemento = data.complemento;
-    if (data.latitude !== undefined) updateData.latitude = data.latitude;
-    if (data.longitude !== undefined) updateData.longitude = data.longitude;
+    if (data.expectativaGeracao !== undefined) updateData.expectativa_geracao = data.expectativaGeracao; // Adicionado
     if (data.capacidadeBombona !== undefined) updateData.capacidade_bombona = data.capacidadeBombona;
     if (data.nivelAtualPct !== undefined) updateData.nivel_atual_pct = data.nivelAtualPct;
     if (data.statusBombona !== undefined) updateData.status_bombona = data.statusBombona;
@@ -88,7 +86,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
   }
 
   async updateStatusComObservacao(
-    id: string, 
+    id: string | number, 
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
     observacao: string | null
   ): Promise<PontoColeta> {
@@ -96,8 +94,6 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
       .from('pontos_coleta')
       .update({
         status_aprovacao_ponto_coleta: status,
-        // Se tiver campo de observacao na tabela, adicionar aqui
-        // observacao: observacao
       })
       .eq('id', id)
       .select()
@@ -121,7 +117,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
 
   private mapToEntity(data: any): PontoColeta {
     return {
-      id: data.id,
+       id: data.id,
       parceiroId: data.parceiro_id,
       cep: data.cep,
       logradouro: data.logradouro,
@@ -130,14 +126,13 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
       cidade: data.cidade,
       estado: data.estado,
       complemento: data.complemento,
-      latitude: data.latitude,
-      longitude: data.longitude,
+      expectativaGeracao: data.expectativa_geracao, // Adicionado
       capacidadeBombona: data.capacidade_bombona,
       nivelAtualPct: data.nivel_atual_pct,
       statusBombona: data.status_bombona,
       statusAprovacaoPontoColeta: data.status_aprovacao_ponto_coleta,
       nomePontoColeta: data.nome_ponto_coleta,
-      criadoEm: data.criado_em,
+    //   criadoEm: data.criado_em,
     };
   }
 }

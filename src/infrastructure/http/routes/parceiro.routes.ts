@@ -7,7 +7,7 @@ import { SupabasePontoColetaRepository } from '../../../infrastructure/repositor
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
-import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase'; // <-- Importado
+import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
 
 import { ParceiroController } from '../controllers/ParceiroController';
 import {
@@ -33,16 +33,15 @@ const loginParceiroUseCase = new LoginParceiroUseCase(
   parceiroRepository
 );
 
-const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(
-  parceiroRepository
+const getParceiroLogadoUseCase = new  GetParceiroLogadoUseCase(
+  parceiroRepository,
+  pontoColetaRepository
 );
 
-// 1. Instanciar o UseCase faltante
 const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(
   parceiroRepository
 );
 
-// 2. Passar AMBOS os casos de uso para o Controller
 const parceiroController = new ParceiroController(
   getParceiroLogadoUseCase,
   verificarDisponibilidadeUseCase
@@ -50,10 +49,6 @@ const parceiroController = new ParceiroController(
 
 // ======================
 // SWAGGER / ROTAS
-// ======================
-
-// ======================
-// SWAGGER
 // ======================
 
 /**
@@ -76,11 +71,26 @@ const parceiroController = new ParceiroController(
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - tipoPessoa
+ *               - nomeRazaoSocial
+ *               - email
+ *               - senha
+ *               - documento
+ *               - cep
+ *               - logradouro
+ *               - numero
+ *               - bairro
  *             properties:
  *               tipoPessoa:
  *                 type: string
- *                 enum: [FISICA, JURIDICA]
+ *                 enum: [JURIDICA, FISICA]
+ *               tipoParceiro:
+ *                 type: string
+ *                 enum: [INSTITUCIONAL, COMUNITARIO, SOLIDARIO]
  *               nomeRazaoSocial:
+ *                 type: string
+ *               nomeSocial:
  *                 type: string
  *               email:
  *                 type: string
@@ -88,11 +98,20 @@ const parceiroController = new ParceiroController(
  *                 type: string
  *               documento:
  *                 type: string
- *               porte:
+ *               telefone:
  *                 type: string
- *                 enum: [PEQUENO, MEDIO, GRANDE]
+ *               redesSociais:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               aceiteMarketing:
  *                 type: boolean
+ *               parceiroIndicadorId:
+ *                 type: string
+ *               responsavelLegalNome:
+ *                 type: string
+ *               responsavelLegalCpf:
+ *                 type: string
  *               cep:
  *                 type: string
  *               logradouro:
@@ -101,11 +120,17 @@ const parceiroController = new ParceiroController(
  *                 type: string
  *               bairro:
  *                 type: string
- *               capacidadeBombona:
- *                 type: number
+ *               cidade:
+ *                 type: string
+ *               estado:
+ *                 type: string
+ *               complemento:
+ *                 type: string
  *     responses:
  *       201:
  *         description: Parceiro cadastrado com sucesso
+ *       400:
+ *         description: Dados inválidos ou duplicados
  */
 router.post('/register', async (req, res) => {
   try {
@@ -133,6 +158,9 @@ router.post('/register', async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - email
+ *               - senha
  *             properties:
  *               email:
  *                 type: string
@@ -171,6 +199,8 @@ router.post('/login', loginLimiter, async (req, res) => {
  *     responses:
  *       200:
  *         description: Dados do parceiro
+ *       401:
+ *         description: Não autorizado
  */
 router.get(
   '/me',
@@ -178,6 +208,7 @@ router.get(
   AuthMiddleware.requireRole('parceiro'),
   (req, res) => parceiroController.me(req, res)
 );
+
 /**
  * @openapi
  * /parceiros/logout:
@@ -263,9 +294,32 @@ router.get('/buscar-cep/:cep', async (req, res) => {
       message: 'Erro ao buscar dados do CEP',
     });
   }
-}); // <-- Corrigido o fechamento correto da rota de CEP (removida a vírgula indevida)
+});
 
-// Rota de verificação de disponibilidade corrigida e isolada
+/**
+ * @openapi
+ * /parceiros/verificar-disponibilidade:
+ *   get:
+ *     tags:
+ *       - Parceiro
+ *     summary: Verificar disponibilidade de e-mail ou documento
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         required: false
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: documento
+ *         required: false
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Status de disponibilidade retornado com sucesso
+ *       400:
+ *         description: Parâmetro inválido ou ausente
+ */
 router.get('/verificar-disponibilidade', (req, res) => 
   parceiroController.verificarDisponibilidade(req, res)
 );

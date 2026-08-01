@@ -4,7 +4,7 @@ import {PontoColeta} from "../../../domain/entities/PontoColeta";
 export class GetPontoColetaUseCase {
   constructor(private readonly pontoColetaRepository: IPontoColetaRepository) {}
 
-  async execute(id: string): Promise<PontoColeta> {
+  async execute(id: number): Promise<PontoColeta> {
     const pontoColeta = await this.pontoColetaRepository.findById(id);
 
     if (!pontoColeta) {

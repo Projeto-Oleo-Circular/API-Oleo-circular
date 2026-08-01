@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
 
-export function generate(payload: { id: string; email: string; tipo: string }): string {
+export function generate(payload: { id: number; email: string; tipo: string }): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
 }
 
