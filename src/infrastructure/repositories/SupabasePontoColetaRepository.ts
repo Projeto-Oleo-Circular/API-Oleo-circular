@@ -16,13 +16,12 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
         cidade: data.cidade,
         estado: data.estado,
         complemento: data.complemento,
-        expectativa_geracao: data.expectativaGeracao, // Adicionado!
+        expectativa_geracao: data.expectativaGeracao, 
         capacidade_bombona: data.capacidadeBombona,
         nivel_atual_pct: data.nivelAtualPct,
         status_bombona: data.statusBombona,
         status_aprovacao_ponto_coleta: data.statusAprovacaoPontoColeta,
         nome_ponto_coleta: data.nomePontoColeta,
-        // Removidos 'latitude' e 'longitude' pois não existem na tabela do banco
       })
       .select()
       .single();

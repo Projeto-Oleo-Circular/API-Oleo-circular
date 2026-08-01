@@ -22,7 +22,6 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
         parceiro_indicador_id: data.parceiroIndicadorId,
         status_aprovacao_parceiro: data.statusAprovacaoParceiro || 'PENDENTE',
         redes_sociais: data.redesSociais,
-        // Removidos 'porte' e 'expectativa_geracao' pois não existem na tabela parceiros
       })
       .select()
       .single();
