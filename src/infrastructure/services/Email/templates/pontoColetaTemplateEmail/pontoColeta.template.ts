@@ -85,7 +85,7 @@ export function renderPontoColetaStatusEmail({
           ctaLabel: 'Ver meus pontos',
 
           ctaUrl:
-            'https://cooperativa.com.br/pontos',
+            'https://OleoCircular.com.br/pontos',
         }),
       };
 

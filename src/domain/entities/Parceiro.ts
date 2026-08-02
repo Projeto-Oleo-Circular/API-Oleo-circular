@@ -1,5 +1,5 @@
 export interface Parceiro {
-  id: string;
+  id: number;
   email: string;
   senhaHash: string;
   documento: string;

@@ -1,3 +1,5 @@
+import { renderEmailTemplate } from '../../EmailTemplate';
+
 interface NovaSolicitacaoColetaTemplateProps {
   nomePonto: string;
   endereco: string;
@@ -7,139 +9,46 @@ interface NovaSolicitacaoColetaTemplateProps {
   solicitacaoId: number;
 }
 
+interface EmailTemplateResult {
+  subject: string;
+  html: string;
+}
+
 export function novaSolicitacaoColetaTemplate({
   nomePonto,
   endereco,
   cidade,
   estado,
   volume,
-  solicitacaoId
-}: NovaSolicitacaoColetaTemplateProps) {
+  solicitacaoId,
+}: NovaSolicitacaoColetaTemplateProps): EmailTemplateResult {
+  return {
+    subject: 'Nova solicitação de coleta registrada',
+    html: renderEmailTemplate({
+      preheader:
+        'Uma nova solicitação de coleta foi criada e aguarda aprovação administrativa.',
+      title: 'Nova solicitação de coleta',
+      badge: 'INFO',
+      contentHtml: `
+        <p>Uma nova solicitação de coleta foi criada e aguarda aprovação administrativa.</p>
 
-  return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <meta charset="UTF-8">
-    <title>Nova Solicitação de Coleta</title>
-  </head>
+        <h3>Informações da solicitação</h3>
 
-  <body style="
-    margin:0;
-    padding:0;
-    background:#f4f4f4;
-    font-family:Arial, Helvetica, sans-serif;
-  ">
+        <p><strong>ID da solicitação:</strong> ${solicitacaoId}</p>
+        <p><strong>Ponto de coleta:</strong> ${nomePonto}</p>
+        <p><strong>Endereço:</strong> ${endereco}</p>
+        <p><strong>Cidade / Estado:</strong> ${cidade}/${estado}</p>
+        <p><strong>Volume informado:</strong> ${volume} litros</p>
+      `,
+      ctaLabel: 'Abrir painel administrativo',
+      ctaUrl: 'https://OleoCircular.com.br/admin/solicitacoes',
+      secondaryContentHtml: `
+        <strong>Próximos passos</strong>
 
-    <table width="100%" cellpadding="0" cellspacing="0">
-      <tr>
-        <td align="center">
-
-          <table 
-            width="600"
-            style="
-              background:#ffffff;
-              margin:40px auto;
-              border-radius:10px;
-              overflow:hidden;
-            "
-          >
-
-            <tr>
-              <td style="
-                background:#15803d;
-                padding:25px;
-                color:white;
-                text-align:center;
-              ">
-                <h1>
-                  Nova Solicitação de Coleta
-                </h1>
-              </td>
-            </tr>
-
-
-            <tr>
-              <td style="
-                padding:30px;
-                color:#333;
-              ">
-
-                <p>
-                  Uma nova solicitação de coleta foi criada 
-                  e aguarda aprovação administrativa.
-                </p>
-
-
-                <h3>
-                  Informações do ponto
-                </h3>
-
-
-                <table width="100%" cellpadding="8">
-
-                  <tr>
-                    <td><strong>ID Solicitação:</strong></td>
-                    <td>${solicitacaoId}</td>
-                  </tr>
-
-                  <tr>
-                    <td><strong>Ponto:</strong></td>
-                    <td>${nomePonto}</td>
-                  </tr>
-
-                  <tr>
-                    <td><strong>Endereço:</strong></td>
-                    <td>${endereco}</td>
-                  </tr>
-
-                  <tr>
-                    <td><strong>Cidade:</strong></td>
-                    <td>${cidade}/${estado}</td>
-                  </tr>
-
-                  <tr>
-                    <td><strong>Volume informado:</strong></td>
-                    <td>${volume} litros</td>
-                  </tr>
-
-                </table>
-
-
-                <br>
-
-                <p>
-                  Acesse o painel administrativo para 
-                  analisar e aprovar a solicitação.
-                </p>
-
-
-              </td>
-            </tr>
-
-
-            <tr>
-              <td style="
-                background:#f1f5f9;
-                padding:20px;
-                text-align:center;
-                font-size:12px;
-                color:#64748b;
-              ">
-
-                Sistema de Coleta Sustentável
-
-              </td>
-            </tr>
-
-
-          </table>
-
-        </td>
-      </tr>
-    </table>
-
-  </body>
-  </html>
-  `;
+        <p>Verifique e aprove ou rejeite esta solicitação no painel administrativo.</p>
+      `,
+      footerMessage:
+        'Obrigado por usar o sistema de coleta sustentável da Oleo Circular.',
+    }),
+  };
 }

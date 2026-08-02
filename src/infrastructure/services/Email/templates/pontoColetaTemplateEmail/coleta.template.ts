@@ -84,7 +84,7 @@ export function renderColetaEmail({
           `,
 
           ctaLabel: 'Ver minhas coletas',
-          ctaUrl: 'https://cooperativa.com.br/coletas',
+          ctaUrl: 'https://OleoCircular.com.br/coletas',
         }),
       };
 
@@ -133,7 +133,7 @@ export function renderColetaEmail({
             </p>
 
             <p>
-              Obrigado por colaborar com a cooperativa e contribuir para a
+              Obrigado por colaborar com a Oleo Circular e contribuir para a
               destinação correta dos resíduos.
             </p>
           `,
@@ -144,7 +144,7 @@ export function renderColetaEmail({
           `,
 
           ctaLabel: 'Solicitar nova coleta',
-          ctaUrl: 'https://cooperativa.com.br/coletas',
+          ctaUrl: 'https://Oleo Circular.com.br/coletas',
         }),
       };
 

@@ -159,7 +159,7 @@ padding:40px 24px;
 
 <img
 src="${LOGO_SRC}"
-alt="Cooperativa"
+alt="Oleo Circular"
 width="80"
 style="
 display:block;
@@ -345,7 +345,7 @@ color:${COLORS.muted};
 ${
 footerMessage ??
 `Este é um e-mail automático, não é necessário responder.<br>
-Cooperativa • Todos os direitos reservados.`
+Oleo Circular • Todos os direitos reservados.`
 }
 
 </p>

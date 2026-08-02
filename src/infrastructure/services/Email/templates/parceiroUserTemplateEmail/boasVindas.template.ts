@@ -1,4 +1,4 @@
-import { renderEmailTemplate } from '../EmailTemplate';
+import { renderEmailTemplate } from '../../EmailTemplate';
 
 interface BoasVindasEmailParams {
   nome: string;
@@ -15,7 +15,7 @@ export function renderBoasVindasEmail({
   loginUrl,
 }: BoasVindasEmailParams): EmailTemplateResult {
   return {
-    subject: 'Bem-vindo(a) à Cooperativa!',
+    subject: 'Bem-vindo(a) à Oleo Circular!',
 
     html: renderEmailTemplate({
       preheader:
@@ -61,7 +61,7 @@ export function renderBoasVindasEmail({
       }),
 
       footerMessage: `
-        Obrigado por fazer parte da Cooperativa.<br/>
+        Obrigado por fazer parte da Oleo Circular.<br/>
         Juntos contribuímos para uma gestão mais sustentável dos resíduos.
       `,
     }),

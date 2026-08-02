@@ -31,7 +31,7 @@ export function renderConfirmarEmail({
         <p>Olá <strong>${nome}</strong>,</p>
 
         <p>
-          Seja bem-vindo(a) à Cooperativa!
+          Seja bem-vindo(a) à Oleo Circular!
         </p>
 
         <p>
