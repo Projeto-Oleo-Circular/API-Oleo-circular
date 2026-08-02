@@ -5,7 +5,7 @@ import {
   CriarPontoColetaDTO,
   CriarPontoColetaDTOSchema,
 } from '../../../shared/dtos/pontoColeta/CriarPontoColetaDTO';
-import { PontoColeta } from '../../entities/PontoColeta';
+import { getCategoriaPontoColetaLabel, PontoColeta } from '../../entities/PontoColeta';
 
 export class CriarPontoColetaUseCase {
   constructor(
@@ -27,7 +27,8 @@ export class CriarPontoColetaUseCase {
     // 2. Montagem do objeto omitindo 'id' e 'criadoEm', pois o DB cuida disso
     const pontoColetaParaCriar: Omit<PontoColeta, 'id' | 'criadoEm'> = {
       parceiroId: data.parceiroId,
-      nomePontoColeta: data.nomePontoColeta ?? `Ponto Secundário`, // Nome default caso não venha
+      nomePontoColeta: data.nomePontoColeta ?? `Ponto Secundário`,
+      categoria: data.categoria,
       cep: data.cep,
       logradouro: data.logradouro,
       numero: data.numero,
@@ -37,12 +38,18 @@ export class CriarPontoColetaUseCase {
       complemento: data.complemento,
       capacidadeBombona: data.capacidadeBombona,
       expectativaGeracao: data.expectativaGeracao,
-      nivelAtualPct: data.nivelAtualPct ?? 0, // Inicia vazio
-      statusBombona: data.statusBombona ?? 'VAZIA', // Inicia vazia
-      statusAprovacaoPontoColeta: 'PENDENTE', // Requer aprovação do admin
+      nivelAtualPct: data.nivelAtualPct ?? 0,
+      statusBombona: data.statusBombona ?? 'VAZIA',
+      statusAprovacaoPontoColeta: 'PENDENTE',
     };
 
     // 3. Persistência
-    return await this.pontoColetaRepository.create(pontoColetaParaCriar);
+    const result = await this.pontoColetaRepository.create(pontoColetaParaCriar);
+    const categoriaLabel = getCategoriaPontoColetaLabel(result.categoria);
+
+    return {
+      ...result,
+      categoria: categoriaLabel ?? result.categoria,
+    };
   }
 }

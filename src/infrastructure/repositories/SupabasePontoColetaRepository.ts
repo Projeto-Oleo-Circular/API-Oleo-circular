@@ -1,5 +1,5 @@
 // infrastructure/repositories/SupabasePontoColetaRepository.ts
-import { PontoColeta } from '../../domain/entities/PontoColeta';
+import { getCategoriaPontoColetaLabel, PontoColeta } from '../../domain/entities/PontoColeta';
 import { IPontoColetaRepository } from '../../domain/repositories/IPontoColetaRepository';
 import { supabase } from '../../shared/config/supabase';
 
@@ -9,6 +9,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
       .from('pontos_coleta')
       .insert({
         parceiro_id: data.parceiroId,
+        categoria: data.categoria,
         cep: data.cep,
         logradouro: data.logradouro,
         numero: data.numero,
@@ -16,7 +17,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
         cidade: data.cidade,
         estado: data.estado,
         complemento: data.complemento,
-        expectativa_geracao: data.expectativaGeracao, 
+        expectativa_geracao: data.expectativaGeracao,
         capacidade_bombona: data.capacidadeBombona,
         nivel_atual_pct: data.nivelAtualPct,
         status_bombona: data.statusBombona,
@@ -58,6 +59,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
   async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoColeta> {
     const updateData: any = {};
     
+    if (data.categoria !== undefined) updateData.categoria = data.categoria;
     if (data.cep !== undefined) updateData.cep = data.cep;
     if (data.logradouro !== undefined) updateData.logradouro = data.logradouro;
     if (data.numero !== undefined) updateData.numero = data.numero;
@@ -115,9 +117,13 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
   }
 
   private mapToEntity(data: any): PontoColeta {
+    const categoriaNumero = data.categoria;
+    const categoriaLabel = getCategoriaPontoColetaLabel(categoriaNumero);
+
     return {
        id: data.id,
       parceiroId: data.parceiro_id,
+      categoria: categoriaLabel ?? categoriaNumero,
       cep: data.cep,
       logradouro: data.logradouro,
       numero: data.numero,

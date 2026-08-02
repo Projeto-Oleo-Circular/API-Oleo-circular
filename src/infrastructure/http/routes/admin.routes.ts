@@ -38,7 +38,7 @@ const atualizarStatusParceiroUseCase = new AtualizarStatusParceiroUseCase(parcei
 const atualizarStatusPontoColetaUseCase = new AtualizarStatusPontoColetaUseCase(pontoColetaRepository, parceiroRepository);
 const listarParceirosPendentesUseCase = new ListarParceirosPendentesUseCase(parceiroRepository);
 const listarTodosParceirosUseCase = new ListarTodosParceirosUseCase(parceiroRepository);
-const listarTodosPontosUseCase = new ListarTodosPontosUseCase(pontoColetaRepository);
+const listarTodosPontosUseCase = new ListarTodosPontosUseCase(pontoColetaRepository, parceiroRepository);
 const atualizarStatusSolicitacaoUseCase = new AtualizarStatusSolicitacaoUseCase(solicitacaoRepository, pontoColetaRepository, parceiroRepository);
 const listarTodasSolicitacoesColetaUseCase = new ListarTodasSolicitacoesColetaUseCase(solicitacaoRepository, pontoColetaRepository, parceiroRepository);
 
@@ -261,28 +261,56 @@ router.patch('/parceiros/:id/status', AuthMiddleware.verify, AuthMiddleware.requ
  * @swagger
  * /admin/pontos:
  *   get:
- *     summary: Lista todos os pontos de coleta
+ *     summary: Lista pontos de coleta com filtros e paginação
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: categoria
+ *         schema:
+ *           oneOf:
+ *             - type: integer
+ *               enum: [1, 2, 3, 4, 5, 6, 7]
+ *             - type: string
+ *               example: Escola / Universidade
+ *         description: Filtra pela categoria do ponto de coleta. Aceita número ou nome traduzido.
+ *       - in: query
+ *         name: nomePonto
+ *         schema:
+ *           type: string
+ *         description: Busca por nome do ponto de coleta
+ *       - in: query
+ *         name: statusBombona
+ *         schema:
+ *           type: string
+ *         description: Filtra pelo status da bombona
+ *       - in: query
+ *         name: parceiro
+ *         schema:
+ *           type: string
+ *         description: Busca pelo nome do parceiro
+ *       - in: query
+ *         name: statusAprovacao
+ *         schema:
+ *           type: string
+ *           enum: [APROVADO, REJEITADO, PENDENTE]
+ *         description: Filtra pelo status de aprovação do ponto
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número da página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Quantidade de itens por página
  *     responses:
  *       200:
- *         description: Lista de pontos de coleta
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   parceiroId:
- *                     type: number
- *                   statusAprovacaoPontoColeta:
- *                     type: string
- *                   observacao:
- *                     type: string
+ *         description: Lista paginada de pontos de coleta
  *       401:
  *         description: Não autenticado
  *       403:

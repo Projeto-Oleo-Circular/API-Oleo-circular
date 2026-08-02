@@ -1,5 +1,5 @@
 import {IPontoColetaRepository} from "../../../domain/repositories/IPontoColetaRepository";
-import {PontoColeta} from "../../../domain/entities/PontoColeta";
+import {getCategoriaPontoColetaLabel, PontoColeta} from "../../../domain/entities/PontoColeta";
 
 export class GetPontoColetaUseCase {
   constructor(private readonly pontoColetaRepository: IPontoColetaRepository) {}
@@ -11,6 +11,12 @@ export class GetPontoColetaUseCase {
       throw new Error('Ponto de coleta não encontrado');
     }
 
-    return pontoColeta;
+    const categoriaLabel = getCategoriaPontoColetaLabel(pontoColeta.categoria);
+
+    return {
+      ...pontoColeta,
+      categoria: categoriaLabel ?? pontoColeta.categoria,
+      categoriaNumero: pontoColeta.categoria,
+    } as PontoColeta & { categoriaNumero: number };
   }
 }

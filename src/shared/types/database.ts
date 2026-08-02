@@ -34,6 +34,7 @@ export interface PontoColetaRow {
   id: string;
   parceiro_id: string;
   nome_ponto_coleta: string;
+  categoria: number | null;
   cep: string;
   logradouro: string;
   numero: string;

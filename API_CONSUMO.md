@@ -199,6 +199,7 @@ curl -X POST http://localhost:3000/pontos-coleta \
   -H "Content-Type: application/json" \
   -d '{
     "nomePontoColeta": "Ponto Central",
+    "categoria": "Escola / Universidade",
     "cep": "01000-000",
     "logradouro": "Rua Teste",
     "numero": "200",
@@ -211,9 +212,17 @@ curl -X POST http://localhost:3000/pontos-coleta \
   }'
 ```
 
+Você também pode enviar a categoria como número:
+
+```json
+{
+  "categoria": 3
+}
+```
+
 Resultado esperado:
 - `201 Created`
-- Objeto com o ponto cadastrado
+- Objeto com o ponto cadastrado, incluindo `categoria` traduzida e `categoriaNumero`
 
 Falhas comuns:
 - `400 Bad Request`: dados inválidos
@@ -230,7 +239,7 @@ curl -X GET http://localhost:3000/pontos-coleta/1
 
 Resultado esperado:
 - `200 OK`
-- Dados do ponto encontrado
+- Dados do ponto encontrado, com `categoria` já traduzida e `categoriaNumero`
 
 Falhas comuns:
 - `404 Not Found`: ponto não encontrado
@@ -351,15 +360,40 @@ curl -X PATCH http://localhost:3000/admin/parceiros/1/status \
   }'
 ```
 
-### GET /admin/pontos-coleta
-Lista todos os pontos de coleta.
+### GET /admin/pontos
+Lista todos os pontos de coleta com filtros e paginação.
 
 Exemplo:
 
 ```bash
-curl -X GET http://localhost:3000/admin/pontos-coleta \
+curl -X GET "http://localhost:3000/admin/pontos?categoria=Escola%20/%20Universidade&statusBombona=PARCIAL&page=1&limit=10" \
   -H "Authorization: Bearer SEU_TOKEN_ADMIN"
 ```
+
+Parâmetros aceitos:
+- `categoria`: número da categoria ou nome traduzido
+- `nomePonto`: nome do ponto de coleta
+- `statusBombona`: status da bombona
+- `parceiro`: nome do parceiro
+- `statusAprovacao`: `APROVADO`, `REJEITADO` ou `PENDENTE`
+- `page`: página da paginação
+- `limit`: quantidade por página
+
+Como usar o filtro de categoria:
+- Você pode filtrar por número, por exemplo: `?categoria=3`
+- Também pode filtrar por nome traduzido, por exemplo: `?categoria=Escola%20/%20Universidade`
+- A API aceita variações de texto com acentos e espaços normalizados, então valores como `escola universidade` também funcionam
+
+Exemplo prático:
+```bash
+curl -X GET "http://localhost:3000/admin/pontos?categoria=3&page=1&limit=10" \
+  -H "Authorization: Bearer SEU_TOKEN_ADMIN"
+```
+
+Resultado esperado:
+- `200 OK`
+- Objeto com `items`, `total`, `page`, `limit` e `totalPages`
+- Cada item já vem com `categoria` traduzida e `categoriaNumero`
 
 ### PATCH /admin/pontos-coleta/:id/status
 Atualiza status de ponto de coleta.

@@ -8,6 +8,7 @@ import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/Listar
 import { AtualizarStatusSolicitacaoUseCase } from '../../../domain/use-cases/solicitacao/AtualizarStatusSolicitacaoUseCase';
 import { ListarTodasSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarTodasSolicitacoesColetaUseCase';
 import { ListarSolicitacoesColetaQuerySchema } from '../../../shared/dtos/solicitacaoColeta/ListarSolicitacoesColetaQueryDTO';
+import { ListarPontosColetaQuerySchema } from '../../../shared/dtos/pontoColeta/ListarPontosColetaQueryDTO';
 
 export class AdminController {
   constructor(
@@ -90,7 +91,8 @@ export class AdminController {
 
   async listarPontos(req: Request, res: Response): Promise<void> {
     try {
-      const result = await this.listarTodosPontosUseCase.execute();
+      const filters = ListarPontosColetaQuerySchema.parse(req.query);
+      const result = await this.listarTodosPontosUseCase.execute(filters);
       res.status(200).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro inesperado';

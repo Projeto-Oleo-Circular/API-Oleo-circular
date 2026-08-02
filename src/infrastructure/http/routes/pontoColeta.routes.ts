@@ -73,7 +73,13 @@ router.get(
         parceiroId!
       );
 
-      return res.status(200).json(pontos);
+      return res.status(200).json(
+        pontos.map((ponto) => ({
+          ...ponto,
+          categoria: ponto.categoria,
+          categoriaNumero: typeof ponto.categoria === 'number' ? ponto.categoria : undefined,
+        }))
+      );
     } catch (error) {
       if (error instanceof Error) {
         return res.status(400).json({
@@ -115,6 +121,13 @@ router.get(
  *                 type: number
  *               nomePontoColeta:
  *                 type: string
+ *               categoria:
+ *                 oneOf:
+ *                   - type: integer
+ *                     enum: [1, 2, 3, 4, 5, 6, 7]
+ *                   - type: string
+ *                     example: Escola / Universidade
+ *                 description: Aceita número da categoria ou o nome traduzido da categoria.
  *               cep:
  *                 type: string
  *               logradouro:

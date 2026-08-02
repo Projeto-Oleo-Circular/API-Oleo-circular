@@ -75,6 +75,7 @@ export class CriarParceiroUseCase {
 
     const pontoColetaData: Omit<PontoColeta, 'id' | 'criadoEm'> = {
       parceiroId: parceiro.id,
+      categoria: data.categoria ?? 7,
       cep: data.cep,
       logradouro: data.logradouro,
       numero: data.numero,
@@ -88,7 +89,6 @@ export class CriarParceiroUseCase {
       statusBombona: 'VAZIA',
       statusAprovacaoPontoColeta: 'PENDENTE',
       nomePontoColeta: `Ponto ${data.nomeRazaoSocial}`,
-      
     };
 
     const pontoColeta =
