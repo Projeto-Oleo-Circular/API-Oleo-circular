@@ -1,4 +1,4 @@
-import { renderEmailTemplate } from '../EmailTemplate';
+import { renderEmailTemplate } from '../../EmailTemplate';
 
 interface ConfirmarEmailParams {
   nome: string;

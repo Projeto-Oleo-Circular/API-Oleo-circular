@@ -1,4 +1,4 @@
-import { EmailStatus, renderEmailTemplate } from '../EmailTemplate';
+import { EmailStatus, renderEmailTemplate } from '../../EmailTemplate';
 
 export type ColetaStatus =
   | 'SOLICITADA'

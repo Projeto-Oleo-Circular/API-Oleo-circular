@@ -1,7 +1,7 @@
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
 import { EmailService } from '../../../infrastructure/services/Email/EmailService';
-import { renderParceiroStatusEmail } from '../../../infrastructure/services/Email/templates/parceiro.template';
+import { renderParceiroStatusEmail } from '../../../infrastructure/services/Email/templates/parceiroUserTemplateEmail/parceiro.template';
 export class AtualizarStatusParceiroUseCase {
   constructor(
     private readonly parceiroRepository: IParceiroRepository,

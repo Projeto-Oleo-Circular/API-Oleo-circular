@@ -9,6 +9,7 @@ import parceiroRoutes from './infrastructure/http/routes/parceiro.routes';
 import pontoColetaRoutes from './infrastructure/http/routes/pontoColeta.routes';
 import adminRoutes from './infrastructure/http/routes/admin.routes';
 import parceiroIndicadorRoutes from './infrastructure/http/routes/parceiroIndicador.routes';
+import solicitacaoColeta from './infrastructure/http/routes/solicitacao.routes';
 import { swaggerSpec } from './infrastructure/http/docs/swagger';
 
 dotenv.config();
@@ -67,6 +68,8 @@ app.use('/parceiros', parceiroRoutes);
 app.use('/pontos-coleta', pontoColetaRoutes);
 app.use('/admin', adminRoutes);
 app.use('/parceiros-indicadores', parceiroIndicadorRoutes);
+app.use('/solicitacoes-coleta', solicitacaoColeta);
+
 
 app.get('/health', (_req, res) => {
   res.status(200).json({

@@ -1,7 +1,7 @@
 import {
   EmailStatus,
   renderEmailTemplate,
-} from '../EmailTemplate';
+} from '../../EmailTemplate';
 
 interface PontoColetaStatusEmailParams {
   nome: string;
