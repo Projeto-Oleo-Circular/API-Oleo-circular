@@ -132,6 +132,22 @@ const parceiroController = new ParceiroController(
  *                 type: string
  *               complemento:
  *                 type: string
+ *               expectativaGeracao:
+ *                 type: number
+ *               capacidadeBombona:
+ *                 type: number
+ *               nivelAtualPct:
+ *                 type: number
+ *               statusBombona:
+ *                 type: string
+ *                 enum: [VAZIA, PARCIAL, CHEIA, EM_COLETA]
+ *               categoria:
+ *                 oneOf:
+ *                   - type: integer
+ *                     enum: [1, 2, 3, 4, 5, 6, 7]
+ *                   - type: string
+ *                     example: Escola / Universidade
+ *                 description: Aceita número da categoria ou o nome traduzido da categoria.
  *     responses:
  *       201:
  *         description: Parceiro cadastrado com sucesso

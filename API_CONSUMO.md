@@ -2,6 +2,101 @@
 
 Este documento reúne os principais endpoints da API, exemplos de requisições e os cenários de sucesso e falha esperados.
 
+## Exemplos completos de POST (curl, headers e body)
+
+Abaixo estão exemplos práticos para executar as principais requisições `POST`. Incluem o comando `curl`, cabeçalhos obrigatórios e um body JSON pronto para teste.
+
+- Registrar parceiro — `POST /parceiros/register`
+
+curl:
+```bash
+curl -X POST "http://localhost:3000/parceiros/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nomeRazaoSocial": "Cooperativa Exemplo",
+    "email": "parceiro@exemplo.com",
+    "senha": "SenhaForte123",
+    "documento": "12345678000190",
+    "tipoParceiro": "INSTITUCIONAL",
+    "categoria": 3
+  }'
+```
+
+Resposta esperada (201 Created): objeto do parceiro criado (ex.: id, nome, email).
+
+- Login de parceiro — `POST /parceiros/login`
+
+curl:
+```bash
+curl -X POST "http://localhost:3000/parceiros/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "parceiro@exemplo.com",
+    "senha": "SenhaForte123"
+  }'
+```
+
+Resposta esperada (200 OK): contém `token` JWT e dados do usuário.
+
+- Criar ponto de coleta — `POST /pontos-coleta`
+
+Observação: o campo `categoria` aceita número (ex.: `3`) ou texto (ex.: `"Escola / Universidade"`). Internamente o sistema normaliza o valor.
+
+curl (com autorização):
+```bash
+curl -X POST "http://localhost:3000/pontos-coleta" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "nomePontoColeta": "Ponto Central",
+    "cep": "01000-000",
+    "logradouro": "Rua Teste",
+    "numero": "200",
+    "bairro": "Centro",
+    "cidade": "São Paulo",
+    "capacidadeBombona": 200,
+    "categoria": "Escola / Universidade"
+  }'
+```
+
+Resposta esperada (201 Created): objeto do ponto com `categoria` (label) e `categoriaNumero`.
+
+- Criar solicitação de coleta — `POST /solicitacoes-coleta`
+
+curl (com autorização do parceiro):
+```bash
+curl -X POST "http://localhost:3000/solicitacoes-coleta" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_AQUI" \
+  -d '{
+    "pontoColetaId": 11,
+    "volumeInformado": 50,
+    "descricao": "Solicitação para coleta parcial"
+  }'
+```
+
+Resposta esperada (201 Created): objeto da solicitação com `id`, `status` inicial (`AGUARDANDO`) e `criadoEm`.
+
+- Login admin — `POST /admin/login`
+
+curl:
+```bash
+curl -X POST "http://localhost:3000/admin/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@oleo.com",
+    "senha": "SenhaAdmin123"
+  }'
+```
+
+Resposta esperada (200 OK): token JWT para chamadas de admin.
+
+---
+
+Se quiser, posso também:
+- Gerar exemplos em formato Postman/Insomnia (coleção importável), ou
+- Incluir payloads alternativos (ex.: criar parceiro com `categoria` textual e numérica) para testar casos extremos.
+
 ## Base URL
 
 - Desenvolvimento local: http://localhost:3000
@@ -470,3 +565,227 @@ Falhas comuns:
 - Sempre envie o token JWT em rotas protegidas.
 - Para testar em ferramentas como Postman ou Insomnia, importe a coleção ou monte as requisições manualmente.
 - Para endpoints com paginação, use `page` e `limit` para controlar o volume de resposta.
+
+## Esquemas de resposta e exemplos (por endpoint)
+
+Esta seção descreve, por endpoint, exemplos de request e os corpos de response esperados, incluindo sucesso e erros comuns. Use estes exemplos como referência ao integrar ou testar a API.
+
+Obs: os campos `categoria` e `categoriaNumero` aparecem em pontos de coleta — `categoria` é o rótulo traduzido (string) e `categoriaNumero` é o valor numérico salvo (number).
+
+### Parceiros
+
+- POST /parceiros/register
+  - Request: ver seção acima (exemplo de body). Pode retornar `201 Created` com:
+  - Success (201):
+```json
+{
+  "id": 123,
+  "nomeRazaoSocial": "Cooperativa Exemplo",
+  "email": "parceiro@exemplo.com",
+  "documento": "12345678000190",
+  "statusAprovacaoParceiro": "PENDENTE",
+  "criadoEm": "2026-08-02T12:00:00.000Z"
+}
+```
+  - Error (400):
+```json
+{ "message": "E-mail já cadastrado" }
+```
+
+- POST /parceiros/login
+  - Success (200):
+```json
+{
+  "token": "eyJhbGci...",
+  "usuario": {
+    "id": 123,
+    "nomeRazaoSocial": "Cooperativa Exemplo",
+    "email": "parceiro@exemplo.com"
+  }
+}
+```
+  - Error (401):
+```json
+{ "message": "Credenciais inválidas" }
+```
+
+- GET /parceiros/me
+  - Success (200):
+```json
+{
+  "id": 123,
+  "nomeRazaoSocial": "Cooperativa Exemplo",
+  "email": "parceiro@exemplo.com",
+  "tipoParceiro": "INSTITUCIONAL"
+}
+```
+
+### Parceiros Indicadores
+
+- GET /parceiros-indicadores
+  - Success (200):
+```json
+[
+  { "id": 1, "nome": "Indicador A", "ativo": true },
+  { "id": 2, "nome": "Indicador B", "ativo": true }
+]
+```
+
+### Pontos de Coleta
+
+- GET /pontos-coleta/meus
+  - Success (200): lista de pontos (cada item traz `categoria` e `categoriaNumero`):
+```json
+[
+  {
+    "id": 10,
+    "parceiroId": 123,
+    "nomePontoColeta": "Ponto Central",
+    "categoria": "Escola / Universidade",
+    "categoriaNumero": 3,
+    "cep": "01000-000",
+    "capacidadeBombona": 200,
+    "statusBombona": "PARCIAL"
+  }
+]
+```
+
+- POST /pontos-coleta
+  - Success (201): objeto criado (categoria já traduzida):
+```json
+{
+  "id": 11,
+  "parceiroId": 123,
+  "nomePontoColeta": "Ponto Central",
+  "categoria": "Escola / Universidade",
+  "categoriaNumero": 3,
+  "cep": "01000-000",
+  "capacidadeBombona": 200,
+  "nivelAtualPct": 30,
+  "statusBombona": "PARCIAL",
+  "statusAprovacaoPontoColeta": "PENDENTE"
+}
+```
+  - Error (400):
+```json
+{ "message": "campo capacidadeBombona é obrigatório" }
+```
+
+- GET /pontos-coleta/:id
+  - Success (200):
+```json
+{
+  "id": 11,
+  "parceiroId": 123,
+  "nomePontoColeta": "Ponto Central",
+  "categoria": "Escola / Universidade",
+  "categoriaNumero": 3,
+  "cep": "01000-000",
+  "logradouro": "Rua Teste",
+  "numero": "200",
+  "bairro": "Centro",
+  "cidade": "São Paulo",
+  "capacidadeBombona": 200,
+  "nivelAtualPct": 30
+}
+```
+  - Error (404):
+```json
+{ "message": "Ponto de coleta não encontrado" }
+```
+
+### Solicitações de Coleta
+
+- POST /solicitacoes-coleta
+  - Success (201):
+```json
+{
+  "id": 200,
+  "pontoColetaId": 11,
+  "volumeInformado": 50,
+  "status": "AGUARDANDO",
+  "criadoEm": "2026-08-02T12:30:00.000Z"
+}
+```
+  - Error (400):
+```json
+{ "message": "Ponto não pertence ao parceiro" }
+```
+
+- GET /solicitacoes-coleta
+  - Success (200): lista com solicitações do parceiro:
+```json
+[
+  {
+    "id": 200,
+    "pontoColetaId": 11,
+    "volumeInformado": 50,
+    "status": "AGUARDANDO",
+    "pontoColeta": { "id": 11, "nomePontoColeta": "Ponto Central", "categoria": "Escola / Universidade", "categoriaNumero": 3 }
+  }
+]
+```
+
+### Admin
+
+- POST /admin/login
+  - Success (200): token (igual ao parceiro)
+
+- GET /admin/parceiros/pendentes
+  - Success (200): array de parceiros com `statusAprovacaoParceiro = PENDENTE`
+
+- GET /admin/parceiros
+  - Success (200): array de parceiros (ver exemplo de parceiro acima)
+
+- PATCH /admin/parceiros/:id/status
+  - Success (200): retorna parceiro atualizado
+  - Error (400): parceiro não encontrado ou status inválido
+
+- GET /admin/pontos (listagem com filtros e paginação)
+  - Request query: `categoria`, `nomePonto`, `statusBombona`, `parceiro`, `statusAprovacao`, `page`, `limit`
+  - Success (200):
+```json
+{
+  "items": [
+    {
+      "id": 11,
+      "parceiroId": 123,
+      "nomePontoColeta": "Ponto Central",
+      "categoria": "Escola / Universidade",
+      "categoriaNumero": 3,
+      "capacidadeBombona": 200,
+      "statusAprovacaoPontoColeta": "PENDENTE"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 1
+}
+```
+
+- PATCH /admin/pontos-coleta/:id/status
+  - Success (200): retorna ponto atualizado
+
+- PATCH /admin/solicitacoes-coleta/:id/status
+  - Success (200): retorna solicitação atualizada
+
+---
+
+## Como verificar respostas na integração
+
+- Verifique o código HTTP primeiro:
+  - 200/201: sucesso — processe o JSON retornado
+  - 400: erro de validação — leia `message` ou corpo de erro
+  - 401/403: problema de autenticação/autorização
+  - 404: recurso não encontrado
+
+- Estrutura JSON:
+  - Endpoints de listagem paginada retornam um objeto com `items`, `total`, `page`, `limit`, `totalPages`.
+  - Objetos de recurso (parceiro, ponto, solicitação) retornam os campos principais listados nos exemplos acima.
+
+- Dicas para testes automatizados:
+  - Asserte status HTTP correto.
+  - Valide presença e tipo dos campos obrigatórios (`id`, `criadoEm`, `categoria`/`categoriaNumero`, etc.).
+  - Para filtros: primeiro crie dados conhecidos (fixtures), depois verifique `total` e `items` correspondentes ao filtro.
+
