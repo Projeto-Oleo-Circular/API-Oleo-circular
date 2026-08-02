@@ -1,14 +1,27 @@
 import { Router } from 'express';
+
+// Repositórios
 import { SupabaseAdminRepository } from '../../../infrastructure/repositories/SupabaseAdminRepository';
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
+import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
+
+
+
+// Use Cases
 import { LoginAdminUseCase } from '../../../domain/use-cases/admin/LoginAdminUseCase';
 import { AtualizarStatusParceiroUseCase } from '../../../domain/use-cases/admin/AtualizarStatusParceiroUseCase';
 import { AtualizarStatusPontoColetaUseCase } from '../../../domain/use-cases/admin/AtualizarStatusPontoColetaUseCase';
 import { ListarParceirosPendentesUseCase } from '../../../domain/use-cases/admin/ListarParceirosPendentesUseCase';
 import { ListarTodosParceirosUseCase } from '../../../domain/use-cases/admin/ListarTodosParceirosUseCase';
 import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/ListarTodosPontosUseCase';
+import { AtualizarStatusSolicitacaoUseCase } from '../../../domain/use-cases/solicitacao/AtualizarStatusSolicitacaoUseCase';
+import { ListarTodasSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarTodasSolicitacoesColetaUseCase';
+
+// Controllers
 import { AdminController } from '../controllers/AdminController';
+
+// Middlewares
 import { AuthMiddleware, loginLimiter } from '../middlewares/AuthMiddleware';
 
 const router = Router();
@@ -17,6 +30,7 @@ const router = Router();
 const adminRepository = new SupabaseAdminRepository();
 const parceiroRepository = new SupabaseParceiroRepository();
 const pontoColetaRepository = new SupabasePontoColetaRepository();
+const solicitacaoRepository = new SupabaseSolicitacaoRepository();
 
 // Instanciação dos Use Cases
 const loginAdminUseCase = new LoginAdminUseCase(adminRepository);
@@ -25,8 +39,10 @@ const atualizarStatusPontoColetaUseCase = new AtualizarStatusPontoColetaUseCase(
 const listarParceirosPendentesUseCase = new ListarParceirosPendentesUseCase(parceiroRepository);
 const listarTodosParceirosUseCase = new ListarTodosParceirosUseCase(parceiroRepository);
 const listarTodosPontosUseCase = new ListarTodosPontosUseCase(pontoColetaRepository);
+const atualizarStatusSolicitacaoUseCase = new AtualizarStatusSolicitacaoUseCase(solicitacaoRepository, pontoColetaRepository, parceiroRepository);
+const listarTodasSolicitacoesColetaUseCase = new ListarTodasSolicitacoesColetaUseCase(solicitacaoRepository, pontoColetaRepository, parceiroRepository);
 
-// Instanciação do Controller
+// Instanciação dos Controllers
 const adminController = new AdminController(
   loginAdminUseCase,
   atualizarStatusParceiroUseCase,
@@ -34,6 +50,8 @@ const adminController = new AdminController(
   listarParceirosPendentesUseCase,
   listarTodosParceirosUseCase,
   listarTodosPontosUseCase,
+  atualizarStatusSolicitacaoUseCase,
+  listarTodasSolicitacoesColetaUseCase,
 );
 
 /**
@@ -84,7 +102,7 @@ const adminController = new AdminController(
  *       401:
  *         description: Credenciais inválidas
  */
-router.post('/login', loginLimiter, async(req, res) => adminController.login(req, res));
+router.post('/login', loginLimiter, async (req, res) => adminController.login(req, res));
 
 /**
  * @swagger
@@ -322,4 +340,126 @@ router.get('/pontos', AuthMiddleware.verify, AuthMiddleware.requireRole('admin')
  */
 router.patch('/pontos/:id/status', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarStatusPonto(req, res));
 
+/**
+ * @swagger
+ * /admin/solicitacoes-coleta/{id}/status:
+ *   patch:
+ *     summary: Atualiza o status de uma solicitação de coleta
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da solicitação de coleta
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [AGUARDANDO, AGENDADA, EM_ROTA, CONCLUIDA]
+ *               dataAgendamento:
+ *                 type: string
+ *                 format: date-time
+ *               volumeColetado:
+ *                 type: number
+ *               observacoes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Solicitação atualizada com sucesso
+ *       400:
+ *         description: Erro de validação ou solicitação não encontrada
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.patch(
+  '/solicitacoes-coleta/:id/status',
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('admin'),
+  (req, res) => adminController.atualizarStatus(req, res)
+);
+/**
+ * @swagger
+ * /admin/solicitacoes-coleta:
+ *   get:
+ *     summary: Lista todas as solicitações de coleta com filtros
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: nomePonto
+ *         schema:
+ *           type: string
+ *         description: Busca por nome do ponto de coleta
+ *       - in: query
+ *         name: parceiro
+ *         schema:
+ *           type: string
+ *         description: Busca por nome do parceiro solicitante
+ *       - in: query
+ *         name: parceiroIndicadorId
+ *         schema:
+ *           type: integer
+ *         description: Filtra por parceiro indicador
+ *       - in: query
+ *         name: capacidadeBombona
+ *         schema:
+ *           type: number
+ *         description: Filtra pela capacidade da bombona
+ *       - in: query
+ *         name: dataSolicitacao
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filtra por data da solicitação (AAAA-MM-DD)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [AGUARDANDO, AGENDADA, EM_ROTA, CONCLUIDA]
+ *         description: Filtra pelo status da solicitação
+ *       - in: query
+ *         name: endereco
+ *         schema:
+ *           type: string
+ *         description: Busca pelo endereço do ponto de coleta
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número da página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Quantidade de itens por página
+ *     responses:
+ *       200:
+ *         description: Lista retornada com sucesso
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.get(
+  '/solicitacoes-coleta',
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('admin'),
+  (req, res) => adminController.listarSolicitacoes(req, res)
+);
 export default router;

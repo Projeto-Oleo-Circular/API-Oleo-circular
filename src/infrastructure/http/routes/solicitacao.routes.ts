@@ -3,7 +3,9 @@ import { Router } from 'express';
 
 import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
+import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { CriarSolicitacaoColetaUseCase } from '../../../domain/use-cases/solicitacao/CriarSolicitacaoColetaUseCase';
+import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
 import { SolicitacaoColetaController } from '../controllers/SolicitarColetaController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
 
@@ -15,14 +17,21 @@ const router = Router();
 
 const solicitacaoRepository = new SupabaseSolicitacaoRepository();
 const pontoColetaRepository = new SupabasePontoColetaRepository();
+const parceiroRepository = new SupabaseParceiroRepository();
 
 const criarSolicitacaoUseCase = new CriarSolicitacaoColetaUseCase(
   solicitacaoRepository,
-  pontoColetaRepository
+  pontoColetaRepository,
+  parceiroRepository,
+);
+
+const listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(
+  solicitacaoRepository,
+  pontoColetaRepository,
 );
 
 const solicitacaoController = new SolicitacaoColetaController(
-  criarSolicitacaoUseCase
+  criarSolicitacaoUseCase,
 );
 
 // ======================
@@ -57,26 +66,81 @@ const solicitacaoController = new SolicitacaoColetaController(
  *             properties:
  *               pontoColetaId:
  *                 type: integer
- *                 description: ID do Ponto de Coleta onde o óleo está armazenado
+ *                 description: ID do ponto de coleta onde o óleo está armazenado
+ *                 example: 1
  *               volumeInformado:
  *                 type: number
- *                 description: Volume estimado de óleo a ser coletado (em litros/unidade)
+ *                 description: Volume estimado de óleo a ser coletado (em litros)
+ *                 example: 50
  *               observacoes:
  *                 type: string
- *                 description: Informações adicionais (ex. "Bombona na portaria 2")
+ *                 description: Informações adicionais
+ *                 example: Bombona localizada na portaria principal
  *     responses:
  *       201:
- *         description: Solicitação criada com sucesso. Status inicial definido como AGUARDANDO.
+ *         description: Solicitação criada com sucesso
  *       400:
- *         description: Erro de validação ou o ponto de coleta não pertence ao parceiro logado.
+ *         description: Erro de validação ou ponto não pertence ao parceiro
  *       401:
- *         description: Usuário não autenticado.
+ *         description: Usuário não autenticado
  */
 router.post(
   '/',
   AuthMiddleware.verify,
-  AuthMiddleware.requireRole('parceiro'), // Apenas parceiros podem solicitar
-  (req, res) => solicitacaoController.criar(req, res)
+  AuthMiddleware.requireRole('parceiro'),
+  (req, res) => solicitacaoController.criar(req, res),
 );
+
+/**
+ * @openapi
+ * /solicitacoes-coleta:
+ *   get:
+ *     tags:
+ *       - Solicitação de Coleta
+ *     summary: Lista as solicitações de coleta do parceiro logado
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de solicitações de coleta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 10
+ *                   status:
+ *                     type: string
+ *                     example: AGUARDANDO
+ *                   volumeInformado:
+ *                     type: number
+ *                     example: 50
+ *                   observacoes:
+ *                     type: string
+ *                     example: Bombona localizada na portaria principal
+ *                   criadoEm:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2026-08-01T15:30:00.000Z"
+ *                   pontoColeta:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       nome:
+ *                         type: string
+ *                         example: Restaurante Sabor Caseiro
+ *                       endereco:
+ *                         type: string
+ *                         example: Rua das Flores, 123
+ *       401:
+ *         description: Usuário não autenticado
+ */
+
 
 export default router;

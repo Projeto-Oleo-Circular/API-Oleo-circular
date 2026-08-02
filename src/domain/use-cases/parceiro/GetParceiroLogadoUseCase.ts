@@ -7,7 +7,7 @@ export class GetParceiroLogadoUseCase {
     private readonly pontosRepository: IPontoColetaRepository,
   ) {}
 
-  async execute(id: string) {
+  async execute(id: number) {
     const parceiro = await this.parceiroRepository.findById(id);
 
     if (!parceiro) {
@@ -28,7 +28,6 @@ export class GetParceiroLogadoUseCase {
       tipoPessoa,
       email,
       redesSociais,
-      // Adicione outros campos sensíveis se houver, ex: "senha", "cpf", etc.
       ...parceiroSeguro
     } = parceiro;
 

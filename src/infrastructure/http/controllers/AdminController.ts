@@ -5,6 +5,9 @@ import { AtualizarStatusPontoColetaUseCase } from '../../../domain/use-cases/adm
 import { ListarParceirosPendentesUseCase } from '../../../domain/use-cases/admin/ListarParceirosPendentesUseCase';
 import { ListarTodosParceirosUseCase } from '../../../domain/use-cases/admin/ListarTodosParceirosUseCase';
 import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/ListarTodosPontosUseCase';
+import { AtualizarStatusSolicitacaoUseCase } from '../../../domain/use-cases/solicitacao/AtualizarStatusSolicitacaoUseCase';
+import { ListarTodasSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarTodasSolicitacoesColetaUseCase';
+import { ListarSolicitacoesColetaQuerySchema } from '../../../shared/dtos/solicitacaoColeta/ListarSolicitacoesColetaQueryDTO';
 
 export class AdminController {
   constructor(
@@ -14,6 +17,8 @@ export class AdminController {
     private readonly listarParceirosPendentesUseCase: ListarParceirosPendentesUseCase,
     private readonly listarTodosParceirosUseCase: ListarTodosParceirosUseCase,
     private readonly listarTodosPontosUseCase: ListarTodosPontosUseCase,
+    private readonly atualizarStatusSolicitacaoUseCase: AtualizarStatusSolicitacaoUseCase,
+    private readonly listarTodasSolicitacoesColetaUseCase: ListarTodasSolicitacoesColetaUseCase,
   ) {}
 
   async login(req: Request, res: Response): Promise<void> {
@@ -109,5 +114,36 @@ export class AdminController {
       email: req.user?.email,
       tipo: req.user?.tipo,
     });
+  }
+
+  async atualizarStatus(req: Request, res: Response): Promise<void> {
+    try {
+      const solicitacaoId = Number(req.params.id);
+      if (Number.isNaN(solicitacaoId)) {
+        res.status(400).json({ message: 'ID da solicitação inválido.' });
+        return;
+      }
+
+      const result = await this.atualizarStatusSolicitacaoUseCase.execute(
+        solicitacaoId,
+        req.body,
+      );
+
+      res.status(200).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+    async listarSolicitacoes(req: Request, res: Response): Promise<void> {
+    try {
+      const filters = ListarSolicitacoesColetaQuerySchema.parse(req.query);
+      const result = await this.listarTodasSolicitacoesColetaUseCase.execute(filters);
+      res.status(200).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
   }
 }

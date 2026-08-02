@@ -1,5 +1,6 @@
 import { ISolicitacaoColetaRepository } from '../../../domain/repositories/ISolicitacaoColetaRepository';
 import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepository';
+import { IParceiroRepository } from '../../../domain/repositories/IParceiroRepository';
 
 import {
   CriarSolicitacaoColetaDTO,
@@ -17,7 +18,8 @@ export class CriarSolicitacaoColetaUseCase {
 
   constructor(
     private readonly solicitacaoRepository: ISolicitacaoColetaRepository,
-    private readonly pontoColetaRepository: IPontoColetaRepository
+    private readonly pontoColetaRepository: IPontoColetaRepository,
+    private readonly parceiroRepository: IParceiroRepository,
   ) {}
 
 
@@ -68,6 +70,10 @@ export class CriarSolicitacaoColetaUseCase {
       );
     }
 
+    const parceiro = await this.parceiroRepository.findById(pontoColeta.parceiroId);
+    if (!parceiro) {
+      throw new Error('Parceiro responsável pelo ponto de coleta não encontrado.');
+    }
 
     const solicitacao =
       await this.solicitacaoRepository.create({
@@ -79,66 +85,49 @@ export class CriarSolicitacaoColetaUseCase {
         observacoes:
           observacoes ?? null,
 
-        status: 'AGUARDANDO'
+        status: 'AGUARDANDO',
 
+        volumeColetado: null,
+        dataAgendamento: null,
+        dataConclusao: null,
       });
 
+    const endereco = `${pontoColeta.logradouro}, ${pontoColeta.numero} - ${pontoColeta.bairro}`;
 
-    void this.notificarAdmin(
-      pontoColeta,
-      solicitacao
-    );
+    const adminEmail = process.env.ADMIN_EMAIL;
 
+    if (adminEmail) {
+      EmailService.send({
+        to: adminEmail,
+        subject: `Nova Solicitação de Coleta #${solicitacao.id}`,
+        html: novaSolicitacaoColetaTemplate({
+          nomePonto: pontoColeta.nomePontoColeta ?? 'Ponto de coleta',
+          endereco,
+          cidade: pontoColeta.cidade,
+          estado: pontoColeta.estado ?? '',
+          volume: solicitacao.volumeInformado,
+          solicitacaoId: solicitacao.id,
+        }),
+      }).catch((error) => {
+        console.error('Falha ao notificar admin por e-mail:', error);
+      });
+    }
 
+    if (parceiro.email) {
+      EmailService.send({
+        to: parceiro.email,
+        subject: `Sua solicitação de coleta #${solicitacao.id} foi recebida`,
+        html: `Olá ${parceiro.nomeRazaoSocial},<br/><br/>Sua solicitação de coleta foi registrada com sucesso e está aguardando aprovação administrativa.<br/><br/>Detalhes:<br/>Ponto: ${pontoColeta.nomePontoColeta}<br/>Endereço: ${endereco}<br/>Volume informado: ${solicitacao.volumeInformado} litros<br/><br/>Obrigado.`,
+      }).catch((error) => {
+        console.error('Falha ao notificar parceiro por e-mail:', error);
+      });
+    }
+
+   
     return {
       solicitacao,
       mensagem:
-        'Solicitação criada com sucesso! Aguarde aprovação do administrador.'
+        'Solicitação criada com sucesso! Aguarde aprovação do administrador.',
     };
-
   }
-
-
-  private async notificarAdmin(
-    pontoColeta: any,
-    solicitacao: any
-  ) {
-
-    const html =
-      novaSolicitacaoColetaTemplate({
-
-        nomePonto:
-          pontoColeta.nomePontoColeta,
-
-        endereco:
-          `${pontoColeta.logradouro}, ${pontoColeta.numero}`,
-
-        cidade:
-          pontoColeta.cidade,
-
-        estado:
-          pontoColeta.estado,
-
-        volume:
-          solicitacao.volumeInformado,
-
-        solicitacaoId:
-          solicitacao.id
-      });
-
-
-    await EmailService.send({
-
-      to:
-        process.env.ADMIN_EMAIL!,
-
-      subject:
-        `Nova Solicitação de Coleta #${solicitacao.id}`,
-
-      html
-
-    });
-
-  }
-
 }

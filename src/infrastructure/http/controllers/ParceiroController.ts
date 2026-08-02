@@ -1,15 +1,18 @@
 import { Request, Response } from 'express';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
 import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
+import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
 
 export class ParceiroController {
   constructor(
     private readonly getParceiroLogadoUseCase: GetParceiroLogadoUseCase,
-    private readonly verificarDisponibilidadeUseCase: VerificarDisponibilidadeUseCase
+    private readonly verificarDisponibilidadeUseCase: VerificarDisponibilidadeUseCase,
+    private readonly listarSolicitacoesColetaUseCase: ListarSolicitacoesColetaUseCase
   ) {
     // Garante o binding dos métodos caso sejam passados como reference por desestruturação nas rotas do Express
     this.me = this.me.bind(this);
     this.verificarDisponibilidade = this.verificarDisponibilidade.bind(this);
+    this.listar = this.listar.bind(this);
   }
 
   async me(req: Request, res: Response): Promise<void> {
@@ -58,4 +61,19 @@ export class ParceiroController {
       res.status(500).json({ message: 'Erro interno do servidor' });
     }
   }
-}
+
+   async listar(req: Request, res: Response): Promise<void> {
+    try {
+      const parceiroLogadoId = req.user?.id;
+      if (!parceiroLogadoId) {
+        res.status(401).json({ message: 'Usuário não autenticado.' });
+        return;
+      }
+
+      const result = await this.listarSolicitacoesColetaUseCase.execute(parceiroLogadoId);
+      res.status(200).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+}}
