@@ -34,7 +34,7 @@ export class AdminController {
 
   async atualizarStatusParceiro(req: Request, res: Response): Promise<void> {
     try {
-      const parceiroId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const parceiroId = Array.isArray(req.params.id) ? Number(req.params.id[0]) : Number(req.params.id);
       const { status, observacao } = req.body;
 
       const allowedStatuses = ['APROVADO', 'REJEITADO', 'PENDENTE'] as const;
@@ -66,7 +66,7 @@ export class AdminController {
       }
 
       const result = await this.atualizarStatusPontoColetaUseCase.execute(
-        pontoId,
+        Number(pontoId),
         status,
         observacao,
       );

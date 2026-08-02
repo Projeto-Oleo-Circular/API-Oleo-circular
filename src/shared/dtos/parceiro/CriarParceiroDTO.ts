@@ -65,8 +65,9 @@ export const CriarParceiroDTOSchema = z
       .regex(/^\d+$/, 'CPF do responsável legal inválido')
       .optional(),
 
-        nomeSocial: z.string().trim().optional(),
+    nomeSocial: z.string().trim().optional(),
     redesSociais: z.array(z.string().trim()).optional(),
+    
     // ==========================
     // Endereço
     // ==========================
@@ -127,16 +128,28 @@ export const CriarParceiroDTOSchema = z
     tipoPorte: z
       .enum(['PEQUENO', 'MEDIO', 'GRANDE'])
       .optional(),
+      
     capacidadeBombona: z
       .number()
       .positive()
       .optional(),
 
-   aceiteTermos: z
-  .boolean()
-  .refine((value) => value === true, {
-    message: 'É necessário aceitar os termos de uso.',
-    }),
+    expectativaGeracao: z
+      .number()
+      .nonnegative('A expectativa de geração não pode ser negativa')
+      .optional(),
+
+    nivelAtualPct: z
+      .number()
+      .min(0, 'O nível não pode ser menor que 0')
+      .max(100, 'O nível não pode ser maior que 100')
+      .optional(),
+
+    aceiteTermos: z
+      .boolean()
+      .refine((value) => value === true, {
+        message: 'É necessário aceitar os termos de uso.',
+      }),
   })
   .superRefine((data, ctx) => {
     // ==========================
@@ -197,8 +210,7 @@ export const CriarParceiroDTOSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['responsavelLegalNome'],
-          message:
-            'Nome do responsável legal é obrigatório',
+          message: 'Nome do responsável legal é obrigatório',
         });
       }
 
@@ -206,15 +218,13 @@ export const CriarParceiroDTOSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['responsavelLegalCpf'],
-          message:
-            'CPF do responsável legal é obrigatório',
+          message: 'CPF do responsável legal é obrigatório',
         });
       } else if (data.responsavelLegalCpf.length !== 11) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['responsavelLegalCpf'],
-          message:
-            'CPF do responsável legal deve possuir 11 dígitos',
+          message: 'CPF do responsável legal deve possuir 11 dígitos',
         });
       }
     }

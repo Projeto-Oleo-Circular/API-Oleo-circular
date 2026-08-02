@@ -3,7 +3,7 @@ import { IAdminRepository } from '../../domain/repositories/IAdminRepository';
 import { supabase } from '../../shared/config/supabase';
 
 interface AdminRow {
-  id: string;
+  id: number;
   nome: string;
   email: string;
   senha_hash: string;
@@ -35,7 +35,7 @@ export class SupabaseAdminRepository implements IAdminRepository {
     }
   }
 
-  async findById(id: string): Promise<Admin | null> {
+  async findById(id: number): Promise<Admin | null> {
     try {
       const { data, error } = await supabase
         .from(this.tableName)

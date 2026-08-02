@@ -278,7 +278,7 @@ router.patch('/parceiros/:id/status', AuthMiddleware.verify, AuthMiddleware.requ
  *                   id:
  *                     type: string
  *                   parceiroId:
- *                     type: string
+ *                     type: number
  *                   statusAprovacaoPontoColeta:
  *                     type: string
  *                   observacao:

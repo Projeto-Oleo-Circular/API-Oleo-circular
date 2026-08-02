@@ -21,11 +21,8 @@ export class GetParceiroLogadoUseCase {
       senhaHash,
       documento,
       telefone,
-      responsavelLegalNome,
-      responsavelLegalCpf,
       aceiteMarketing,
       tipoParceiro,
-      tipoPessoa,
       email,
       redesSociais,
       ...parceiroSeguro

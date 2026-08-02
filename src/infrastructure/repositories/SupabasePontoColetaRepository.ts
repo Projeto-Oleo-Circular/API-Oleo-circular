@@ -43,7 +43,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findByParceiroId(parceiroId: number| string): Promise<PontoColeta[]> {
+  async findByParceiroId(parceiroId: number): Promise<PontoColeta[]> {
     const { data, error } = await supabase
       .from('pontos_coleta')
       .select('*')

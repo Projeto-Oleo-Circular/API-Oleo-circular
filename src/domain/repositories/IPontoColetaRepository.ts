@@ -3,9 +3,9 @@ import { PontoColeta } from '../entities/PontoColeta';
 
 export interface IPontoColetaRepository {
   create(data: Omit<PontoColeta, 'id' | 'criadoEm'>): Promise<PontoColeta>;
-  findById(id: string | number): Promise<PontoColeta | null>;
+  findById(id: number): Promise<PontoColeta | null>;
   findByParceiroId(parceiroId: number): Promise<PontoColeta[]>;
-  update(id: string | number, data: Partial<PontoColeta>): Promise<PontoColeta>;
+  update(id:  number, data: Partial<PontoColeta>): Promise<PontoColeta>;
   updateStatusComObservacao(
     id:  number, 
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
