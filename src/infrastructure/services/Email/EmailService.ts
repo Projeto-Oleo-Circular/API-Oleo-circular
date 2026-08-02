@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 interface SendEmailParams {
   to: string;
   subject: string;
-  html: string;
+  html: any;
 }
 
 export class EmailService {

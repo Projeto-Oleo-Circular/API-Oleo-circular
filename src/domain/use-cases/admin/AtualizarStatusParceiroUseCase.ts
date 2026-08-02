@@ -8,7 +8,7 @@ export class AtualizarStatusParceiroUseCase {
     private readonly pontoColetaRepository: IPontoColetaRepository,
   ) {}
 
-  async execute(parceiroId: string, status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', observacao?: string) {
+  async execute(parceiroId: number, status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', observacao?: string) {
     const parceiro = await this.parceiroRepository.findById(parceiroId);
 
     if (!parceiro) {

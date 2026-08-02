@@ -3,7 +3,7 @@ import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 export class AprovarParceiroUseCase {
   constructor(private readonly parceiroRepository: IParceiroRepository) {}
 
-  async execute(parceiroId: string) {
+  async execute(parceiroId: number) {
     const parceiro = await this.parceiroRepository.findById(parceiroId);
 
     if (!parceiro) {

@@ -14,6 +14,8 @@ import {
   AuthMiddleware,
   loginLimiter,
 } from '../middlewares/AuthMiddleware';
+import { ListarParceirosIndicadorAtivos } from '../../../domain/use-cases/parceiroIndicador/ListarParceirosIndicadorAtivos';
+import { ListarSolicitacoesColetaQuerySchema } from '../../../shared/dtos/solicitacaoColeta/ListarSolicitacoesColetaQueryDTO';
 
 const router = Router();
 
@@ -41,10 +43,14 @@ const getParceiroLogadoUseCase = new  GetParceiroLogadoUseCase(
 const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(
   parceiroRepository
 );
-
+const  listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(
+    parceiroRepository
+    );
 const parceiroController = new ParceiroController(
   getParceiroLogadoUseCase,
-  verificarDisponibilidadeUseCase
+  verificarDisponibilidadeUseCase,
+  listarSolicitacoesColetaUseCase
+  
 );
 
 // ======================
