@@ -3,7 +3,7 @@ import { IPontoColetaRepository } from '../../repositories/IPontoColetaRepositor
 export class AprovarPontoColetaUseCase {
   constructor(private readonly pontoColetaRepository: IPontoColetaRepository) {}
 
-  async execute(pontoColetaId: string) {
+  async execute(pontoColetaId: number) {
     const ponto = await this.pontoColetaRepository.findById(pontoColetaId);
 
     if (!ponto) {

@@ -10,7 +10,7 @@ export class AtualizarStatusPontoColetaUseCase {
   ) {}
 
   async execute(
-    pontoColetaId: string,
+    pontoColetaId: number,
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE',
     observacao?: string,
   ) {

@@ -7,7 +7,7 @@ export interface IPontoColetaRepository {
   findByParceiroId(parceiroId: number): Promise<PontoColeta[]>;
   update(id: string | number, data: Partial<PontoColeta>): Promise<PontoColeta>;
   updateStatusComObservacao(
-    id: string | number, 
+    id:  number, 
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
     observacao: string | null
   ): Promise<PontoColeta>;

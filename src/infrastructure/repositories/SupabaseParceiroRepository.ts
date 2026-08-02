@@ -93,7 +93,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
   }
 
   async updateStatusComObservacao(
-    id: string | number, 
+    id: number, 
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
     observacao: string | null
   ): Promise<Parceiro> {

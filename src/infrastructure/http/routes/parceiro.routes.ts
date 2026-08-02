@@ -3,19 +3,18 @@ import axios from 'axios';
 
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
-
+import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
 import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
-
+import { ListarSolicitacoesColetaUseCase } from "../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase";
 import { ParceiroController } from '../controllers/ParceiroController';
+const solicitacaoRepository = new SupabaseSolicitacaoRepository();
 import {
   AuthMiddleware,
   loginLimiter,
 } from '../middlewares/AuthMiddleware';
-import { ListarParceirosIndicadorAtivos } from '../../../domain/use-cases/parceiroIndicador/ListarParceirosIndicadorAtivos';
-import { ListarSolicitacoesColetaQuerySchema } from '../../../shared/dtos/solicitacaoColeta/ListarSolicitacoesColetaQueryDTO';
 
 const router = Router();
 
@@ -44,7 +43,8 @@ const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(
   parceiroRepository
 );
 const  listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(
-    parceiroRepository
+    solicitacaoRepository,
+    pontoColetaRepository
     );
 const parceiroController = new ParceiroController(
   getParceiroLogadoUseCase,

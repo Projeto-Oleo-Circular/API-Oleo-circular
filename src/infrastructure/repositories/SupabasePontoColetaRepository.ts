@@ -85,7 +85,7 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
   }
 
   async updateStatusComObservacao(
-    id: string | number, 
+    id: number, 
     status: 'APROVADO' | 'REJEITADO' | 'PENDENTE', 
     observacao: string | null
   ): Promise<PontoColeta> {
