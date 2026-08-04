@@ -91,6 +91,23 @@ export class SupabaseSolicitacaoRepository implements ISolicitacaoColetaReposito
     return data ? data.map(this.mapToEntity) : [];
   }
 
+  async findAtivaByPontoColetaId(pontoColetaId: number): Promise<SolicitacaoColeta | null> {
+  const { data, error } = await supabase
+    .from('solicitacoes_coleta')
+    .select('*')
+    .eq('ponto_coleta_id', pontoColetaId)
+    // 🔹 Ignora solicitações que já foram finalizadas!
+    .neq('status', 'CONCLUIDA') 
+    .neq('status', 'CANCELADA')
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Erro ao buscar solicitação ativa: ${error.message}`);
+  }
+  
+  return data ? this.mapToEntity(data) : null;
+}
+
   // Função auxiliar para padronizar o retorno transformando do padrão do BD para a Entidade
   private mapToEntity(data: any): SolicitacaoColeta {
     return {
