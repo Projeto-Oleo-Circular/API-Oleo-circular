@@ -45,6 +45,14 @@ export class CriarSolicitacaoColetaUseCase {
       throw new Error('Este ponto de coleta não pertence ao parceiro logado.');
     }
 
+    const solicitacaoAtiva = await this.solicitacaoRepository.findAtivaByPontoColetaId(pontoColetaId);
+
+    if (solicitacaoAtiva) {
+      throw new Error(
+        'Este ponto de coleta já possui uma solicitação de coleta em andamento. Aguarde a conclusão para solicitar novamente.'
+      );
+    }
+
     const parceiro = await this.parceiroRepository.findById(pontoColeta.parceiroId);
     if (!parceiro) {
       throw new Error('Parceiro responsável pelo ponto de coleta não encontrado.');

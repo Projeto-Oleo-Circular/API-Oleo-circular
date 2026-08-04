@@ -6,4 +6,5 @@ export interface ISolicitacaoColetaRepository {
   findByPontoColetaId(pontoColetaId: number): Promise<SolicitacaoColeta[]>;
   update(id: number, data: Partial<SolicitacaoColeta>): Promise<SolicitacaoColeta>;
   findAll(): Promise<SolicitacaoColeta[]>;
+  findAtivaByPontoColetaId(pontoColetaId: number): Promise<SolicitacaoColeta | null>;
 }
