@@ -67,8 +67,12 @@ export class AtualizarStatusSolicitacaoUseCase {
     }
 
     if (data.status === 'CONCLUIDA') {
-      updatePayload.volumeColetado = data.volumeColetado ?? null;
-      updatePayload.dataConclusao = new Date().toISOString();
+    updatePayload.volumeColetado = data.volumeColetado ?? null;
+    updatePayload.dataConclusao = new Date().toISOString();
+
+    await this.pontoColetaRepository.update(pontoColeta.id, {
+        nivelAtualPct: 0, 
+    });
     }
 
     const solicitacaoAtualizada = await this.solicitacaoRepository.update(
