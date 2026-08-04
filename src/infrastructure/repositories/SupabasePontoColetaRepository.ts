@@ -56,35 +56,37 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     return data ? data.map(this.mapToEntity) : [];
   }
 
-  async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoColeta> {
-    const updateData: any = {};
-    
-    if (data.categoria !== undefined) updateData.categoria = data.categoria;
-    if (data.cep !== undefined) updateData.cep = data.cep;
-    if (data.logradouro !== undefined) updateData.logradouro = data.logradouro;
-    if (data.numero !== undefined) updateData.numero = data.numero;
-    if (data.bairro !== undefined) updateData.bairro = data.bairro;
-    if (data.cidade !== undefined) updateData.cidade = data.cidade;
-    if (data.estado !== undefined) updateData.estado = data.estado;
-    if (data.complemento !== undefined) updateData.complemento = data.complemento;
-    if (data.expectativaGeracao !== undefined) updateData.expectativa_geracao = data.expectativaGeracao; // Adicionado
-    if (data.capacidadeBombona !== undefined) updateData.capacidade_bombona = data.capacidadeBombona;
-    if (data.nivelAtualPct !== undefined) updateData.nivel_atual_pct = data.nivelAtualPct;
-    if (data.statusBombona !== undefined) updateData.status_bombona = data.statusBombona;
-    if (data.statusAprovacaoPontoColeta !== undefined) updateData.status_aprovacao_ponto_coleta = data.statusAprovacaoPontoColeta;
-    if (data.nomePontoColeta !== undefined) updateData.nome_ponto_coleta = data.nomePontoColeta;
+async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoColeta> {
+  const updateData: any = {};
 
-    const { data: result, error } = await supabase
-      .from('pontos_coleta')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
+  if (data.categoria !== undefined) updateData.categoria = data.categoria;
+  if (data.cep !== undefined) updateData.cep = data.cep;
+  if (data.logradouro !== undefined) updateData.logradouro = data.logradouro;
+  if (data.numero !== undefined) updateData.numero = data.numero;
+  if (data.bairro !== undefined) updateData.bairro = data.bairro;
+  if (data.cidade !== undefined) updateData.cidade = data.cidade;
+  if (data.estado !== undefined) updateData.estado = data.estado;
+  if (data.complemento !== undefined) updateData.complemento = data.complemento;
+  if (data.expectativaGeracao !== undefined) updateData.expectativa_geracao = data.expectativaGeracao;
+  if (data.capacidadeBombona !== undefined) updateData.capacidade_bombona = data.capacidadeBombona;
+  if (data.nivelAtualPct !== undefined) updateData.nivel_atual_pct = data.nivelAtualPct;
+  if (data.statusBombona !== undefined) updateData.status_bombona = data.statusBombona;
+  if (data.statusAprovacaoPontoColeta !== undefined) updateData.status_aprovacao_ponto_coleta = data.statusAprovacaoPontoColeta;
+  if (data.nomePontoColeta !== undefined) updateData.nome_ponto_coleta = data.nomePontoColeta;
 
-    if (error) throw new Error(`Erro ao atualizar ponto de coleta: ${error.message}`);
-    
-    return this.mapToEntity(result);
-  }
+  updateData.updated = new Date().toISOString(); 
+
+  const { data: result, error } = await supabase
+    .from('pontos_coleta')
+    .update(updateData)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Erro ao atualizar ponto de coleta: ${error.message}`);
+
+  return this.mapToEntity(result);
+}
 
   async updateStatusComObservacao(
     id: number, 
@@ -121,23 +123,22 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
     const categoriaLabel = getCategoriaPontoColetaLabel(categoriaNumero);
 
     return {
-       id: data.id,
-      parceiroId: data.parceiro_id,
-      categoria: categoriaLabel ?? categoriaNumero,
-      cep: data.cep,
-      logradouro: data.logradouro,
-      numero: data.numero,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      estado: data.estado,
-      complemento: data.complemento,
-      expectativaGeracao: data.expectativa_geracao, // Adicionado
-      capacidadeBombona: data.capacidade_bombona,
-      nivelAtualPct: data.nivel_atual_pct,
-      statusBombona: data.status_bombona,
-      statusAprovacaoPontoColeta: data.status_aprovacao_ponto_coleta,
-      nomePontoColeta: data.nome_ponto_coleta,
-    //   criadoEm: data.criado_em,
-    };
-  }
-}
+    id: data.id,
+    parceiroId: data.parceiro_id,
+    categoria: categoriaLabel ?? categoriaNumero,
+    cep: data.cep,
+    logradouro: data.logradouro,
+    numero: data.numero,
+    bairro: data.bairro,
+    cidade: data.cidade,
+    estado: data.estado,
+    complemento: data.complemento,
+    expectativaGeracao: data.expectativa_geracao,
+    capacidadeBombona: data.capacidade_bombona,
+    nivelAtualPct: data.nivel_atual_pct,
+    statusBombona: data.status_bombona,
+    statusAprovacaoPontoColeta: data.status_aprovacao_ponto_coleta,
+    nomePontoColeta: data.nome_ponto_coleta,
+    atualizadoEm: data.updated,
+  };
+} }

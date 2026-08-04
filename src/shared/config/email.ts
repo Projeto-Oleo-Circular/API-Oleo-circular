@@ -1,13 +1,21 @@
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 export interface EmailConfig {
-  provider: 'gmail';
+  resendApiKey: string;
   from: string;
-  gmailUser: string;
-  gmailAppPassword: string;
 }
 
+const getEnvVar = (key: string): string => {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(` Variável de ambiente ${key} não definida`);
+  }
+  return value;
+};
+
 export const emailConfig: EmailConfig = {
-  provider: 'gmail',
-  from: process.env.GMAIL_USER || '',
-  gmailUser: process.env.GMAIL_USER || '',
-  gmailAppPassword: process.env.GMAIL_APP_PASSWORD || '',
+  resendApiKey: getEnvVar('RESEND_API_KEY'),
+  from: getEnvVar('EMAIL_FROM'),
 };

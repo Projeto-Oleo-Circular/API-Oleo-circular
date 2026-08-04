@@ -89,4 +89,5 @@ export interface PontoColeta {
   nivelAtualPct?: number;
   statusBombona?: string;
   statusAprovacaoPontoColeta?: string;
+  atualizadoEm?: Date;
 }
