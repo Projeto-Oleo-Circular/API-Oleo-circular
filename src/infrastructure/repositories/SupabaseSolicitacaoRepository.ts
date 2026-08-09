@@ -91,23 +91,29 @@ export class SupabaseSolicitacaoRepository implements ISolicitacaoColetaReposito
     return data ? data.map(this.mapToEntity) : [];
   }
 
-  async findAtivaByPontoColetaId(pontoColetaId: number): Promise<SolicitacaoColeta | null> {
+ async findAtivaByPontoColetaId(pontoColetaId: number): Promise<SolicitacaoColeta | null> {
+  const statusAtivos = ['AGUARDANDO', 'AGENDADA', 'EM_ROTA', 'EM_ANDAMENTO', 'SOLICITADA'];
+
   const { data, error } = await supabase
     .from('solicitacoes_coleta')
     .select('*')
     .eq('ponto_coleta_id', pontoColetaId)
-    // 🔹 Ignora solicitações que já foram finalizadas!
-    .neq('status', 'CONCLUIDA') 
-    .neq('status', 'CANCELADA')
-    .maybeSingle();
+    .in('status', statusAtivos) // Procura status em aberto
+    .order('data_solicitacao', { ascending: false }) // Pega a mais recente
+    .limit(1); // 🔹 Garante no máximo 1 linha no retorno em formato de Array (evita o erro PGRST116)
 
   if (error) {
     throw new Error(`Erro ao buscar solicitação ativa: ${error.message}`);
   }
-  
-  return data ? this.mapToEntity(data) : null;
-}
 
+  // Se retornou algum registro no Array, mapeia e devolve
+  if (data && data.length > 0) {
+    return this.mapToEntity(data[0]);
+  }
+
+  // Se não encontrou nenhuma ativa, devolve null (permitindo a nova solicitação)
+  return null;
+}
   // Função auxiliar para padronizar o retorno transformando do padrão do BD para a Entidade
   private mapToEntity(data: any): SolicitacaoColeta {
     return {
