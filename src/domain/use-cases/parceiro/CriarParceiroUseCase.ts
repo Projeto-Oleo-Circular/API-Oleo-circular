@@ -3,7 +3,7 @@ import { CriarParceiroDTO } from '../../../shared/dtos/parceiro/CriarParceiroDTO
 import {
   ParceiroFisica,
   ParceiroJuridica,
-  Parceiro // Certifique-se de exportar isso nas entidades se necessário
+  Parceiro
 } from '../../entities/Parceiro';
 import { PontoColeta } from '../../entities/PontoColeta';
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
@@ -31,7 +31,7 @@ export class CriarParceiroUseCase {
 
     const senhaHash = await bcrypt.hash(data.senha, 10);
 
-    let parceiroData: Omit<ParceiroFisica, 'id' | 'criadoEm'> | Omit<ParceiroJuridica, 'id' | 'criadoEm'>;
+    let parceiroData: any;
 
     if (tipoPessoa === 'FISICA') {
       parceiroData = {
@@ -45,7 +45,10 @@ export class CriarParceiroUseCase {
         telefone: data.telefone ?? null,
         redesSociais: data.redesSociais ?? null,
         aceiteMarketing: data.aceiteMarketing ?? false,
-        parceiroIndicadorId: data.parceiroIndicadorId,
+        parceiroIndicadorId: data.parceiroIndicadorId ?? null,
+        outroParceiro: data.outroParceiro ?? null, 
+        comoConheceu: data.comoConheceu ?? null,   
+        observacao: data.observacao ?? null,     
         statusAprovacaoParceiro: 'PENDENTE',
       };
     } else {
@@ -60,7 +63,10 @@ export class CriarParceiroUseCase {
         telefone: data.telefone ?? null,
         redesSociais: data.redesSociais ?? null,
         aceiteMarketing: data.aceiteMarketing ?? false,
-        parceiroIndicadorId: data.parceiroIndicadorId,
+        parceiroIndicadorId: data.parceiroIndicadorId ?? null,
+        outroParceiro: data.outroParceiro ?? null, 
+        comoConheceu: data.comoConheceu ?? null,  
+        observacao: data.observacao ?? null,       
         statusAprovacaoParceiro: 'PENDENTE',
         responsavelLegalNome: data.responsavelLegalNome!,
         responsavelLegalCpf: data.responsavelLegalCpf!,
@@ -91,20 +97,15 @@ export class CriarParceiroUseCase {
       nomePontoColeta: `Ponto ${data.nomeRazaoSocial}`,
     };
 
-    const pontoColeta =
-      await this.pontoColetaRepository.create(pontoColetaData);
+    await this.pontoColetaRepository.create(pontoColetaData);
 
     this.enviarEmailConfirmacao(parceiro).catch((err) => {
       console.error('Erro ao enviar e-mail:', err);
     });
 
-    // const { senhaHash: _, ...parceiroSemSenha } = parceiro;
-
     return {
-    //   ...parceiroSemSenha,
       mensagem:
         'Cadastro realizado com sucesso! Aguarde a aprovação da equipe.',
-    //   pontoColeta,
     };
   }
 
@@ -163,7 +164,7 @@ export class CriarParceiroUseCase {
     return capacidades[porte] ?? 20;
   }
 
- private async enviarEmailConfirmacao(parceiro: { nomeRazaoSocial: string; email: string }) {
+  private async enviarEmailConfirmacao(parceiro: { nomeRazaoSocial: string; email: string }) {
     const template = renderParceiroStatusEmail({
       nome: parceiro.nomeRazaoSocial,
       status: 'PENDENTE',
@@ -174,4 +175,5 @@ export class CriarParceiroUseCase {
       subject: template.subject,
       html: template.html,
     });
-  }}
+  }
+}

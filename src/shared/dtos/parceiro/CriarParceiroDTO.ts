@@ -131,7 +131,14 @@ export const CriarParceiroDTOSchema = z
       .number()
       .int()
       .positive()
+      .nullable()
       .optional(),
+
+    outroParceiro: z.string().trim().nullable().optional(),
+
+    comoConheceu: z.string().trim().nullable().optional(),
+
+    observacao: z.string().trim().nullable().optional(),
 
     tipoParceiro: z
       .enum(['INSTITUCIONAL', 'COMUNITARIO', 'SOLIDARIO'])
