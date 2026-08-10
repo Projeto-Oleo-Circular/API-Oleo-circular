@@ -51,14 +51,7 @@ app.use(
   })
 );
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Muitas requisições, tente novamente mais tarde.' },
-});
-app.use(limiter);
+
 
 app.use(express.json({ limit: '1mb' }));
 

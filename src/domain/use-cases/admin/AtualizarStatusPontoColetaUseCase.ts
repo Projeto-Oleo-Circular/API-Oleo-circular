@@ -20,6 +20,24 @@ export class AtualizarStatusPontoColetaUseCase {
       throw new Error('Ponto de coleta não encontrado');
     }
 
+    const parceiro = await this.parceiroRepository.findById(ponto.parceiroId);
+
+    if (!parceiro) {
+      throw new Error('Parceiro vinculado a este ponto não foi encontrado');
+    }
+
+    if (status === 'APROVADO') {
+      const statusParceiro = String(parceiro.statusAprovacaoParceiro || '')
+        .trim()
+        .toUpperCase();
+
+      if (statusParceiro !== 'APROVADO') {
+        throw new Error(
+          'Não é possível aprovar este ponto de coleta pois o parceiro responsável ainda encontra-se com cadastro pendente ou rejeitado.'
+        );
+      }
+    }
+
     const pontoAtualizado =
       await this.pontoColetaRepository.updateStatusComObservacao(
         pontoColetaId,
@@ -27,29 +45,20 @@ export class AtualizarStatusPontoColetaUseCase {
         observacao ?? null,
       );
 
-    const parceiro = await this.parceiroRepository.findById(
-      pontoAtualizado.parceiroId,
-    );
+    try {
+      const template = renderParceiroStatusEmail({
+        nome: parceiro.nomeRazaoSocial,
+        status,
+        observacao: status === 'REJEITADO' ? observacao : undefined,
+      });
 
-    if (parceiro) {
-      try {
-        const endereco = `${pontoAtualizado.logradouro}, ${pontoAtualizado.bairro}`;
-        
-        // Se você já tiver um template para ponto de coleta, utilize-o:
-        const template = renderParceiroStatusEmail({
-          nome: parceiro.nomeRazaoSocial,
-          status,
-          observacao: status === 'REJEITADO' ? observacao : undefined,
-        });
-
-        await EmailService.send({
-          to: parceiro.email,
-          subject: template.subject,
-          html: template.html,
-        });
-      } catch (error) {
-        console.error('Erro ao enviar e-mail de status de ponto:', error);
-      }
+      await EmailService.send({
+        to: parceiro.email,
+        subject: template.subject,
+        html: template.html,
+      });
+    } catch (error) {
+      console.error('Erro ao enviar e-mail de status de ponto:', error);
     }
 
     return {
