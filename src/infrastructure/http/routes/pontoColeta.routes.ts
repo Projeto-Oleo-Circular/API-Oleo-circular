@@ -7,6 +7,8 @@ import { AtualizarPontoColetaUseCase } from '../../../domain/use-cases/pontoCole
 
 import { PontoColetaController } from '../controllers/PontoColetaController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
+import { ParceiroIndicadorController } from '../controllers/ParceiroIndicadorController';
+import { SupabaseParceiroRepository } from '../../repositories/SupabaseParceiroRepository';
 
 const router = Router();
 
@@ -15,10 +17,10 @@ const router = Router();
 // ======================
 
 const pontoColetaRepository = new SupabasePontoColetaRepository();
-
+const parceiroRepository = new SupabaseParceiroRepository();
 const criarPontoColetaUseCase = new CriarPontoColetaUseCase(pontoColetaRepository);
 const getPontoColetaUseCase = new GetPontoColetaUseCase(pontoColetaRepository);
-const atualizarPontoColetaUseCase = new AtualizarPontoColetaUseCase(pontoColetaRepository);
+const atualizarPontoColetaUseCase = new AtualizarPontoColetaUseCase(pontoColetaRepository,parceiroRepository);
 
 const pontoColetaController = new PontoColetaController(
   getPontoColetaUseCase,
