@@ -92,7 +92,7 @@ export class CriarSolicitacaoColetaUseCase {
     }
 
     if (parceiro.email) {
-      const nomeParceiro = parceiro.nomeRazaoSocial || parceiro.nomeSocial || 'Parceiro';
+      const nomeParceiro = parceiro.razaoSocial || parceiro.nome || 'Parceiro';
 
       const templateParceiro = confirmacaoSolicitacaoParceiroTemplate({
         nomeParceiro,

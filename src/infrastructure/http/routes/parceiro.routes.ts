@@ -64,6 +64,7 @@ const parceiroController = new ParceiroController(
  *     description: Operações relacionadas aos parceiros
  */
 
+
 /**
  * @openapi
  * /parceiros/register:
@@ -78,82 +79,208 @@ const parceiroController = new ParceiroController(
  *           schema:
  *             type: object
  *             required:
- *               - tipoPessoa
- *               - nomeRazaoSocial
+ *               - nome
+ *               - razaoSocial
  *               - email
  *               - senha
+ *               - confirmarSenha
+ *               - telefone
+ *               - tipoPessoa
  *               - documento
  *               - cep
  *               - logradouro
  *               - numero
  *               - bairro
+ *               - cidade
+ *               - aceiteTermos
  *             properties:
- *               tipoPessoa:
+ *
+ *               nome:
  *                 type: string
- *                 enum: [JURIDICA, FISICA]
- *               tipoParceiro:
+ *                 example: "João da Silva"
+ *                 description: Nome do parceiro.
+ *
+ *               razaoSocial:
  *                 type: string
- *                 enum: [INSTITUCIONAL, COMUNITARIO, SOLIDARIO]
- *               nomeRazaoSocial:
- *                 type: string
- *               nomeSocial:
- *                 type: string
+ *                 example: "Empresa Exemplo LTDA"
+ *                 description: Razão social do parceiro.
+ *
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: "joao@exemplo.com"
+ *
  *               senha:
  *                 type: string
- *               documento:
+ *                 format: password
+ *                 minLength: 6
+ *                 example: "123456"
+ *
+ *               confirmarSenha:
  *                 type: string
+ *                 format: password
+ *                 minLength: 6
+ *                 example: "123456"
+ *
  *               telefone:
  *                 type: string
+ *                 example: "77999999999"
+ *                 description: Telefone contendo apenas números.
+ *
+ *               tipoPessoa:
+ *                 type: string
+ *                 enum:
+ *                   - FISICA
+ *                   - JURIDICA
+ *                 example: JURIDICA
+ *
+ *               tipoPerfil:
+ *                 type: string
+ *                 enum:
+ *                   - INSTITUCIONAL
+ *                   - COMUNITARIO
+ *                   - SOLIDARIO
+ *                 example: COMUNITARIO
+ *
+ *               categoriaPerfil:
+ *                 type: string
+ *                 example: "Associação"
+ *
+ *               categoria:
+ *                 type: integer
+ *                 enum:
+ *                   - 1
+ *                   - 2
+ *                   - 3
+ *                   - 4
+ *                   - 5
+ *                   - 6
+ *                   - 7
+ *                 example: 1
+ *
+ *               documento:
+ *                 type: string
+ *                 pattern: '^\d+$'
+ *                 example: "12345678000199"
+ *                 description: CPF ou CNPJ, de acordo com o tipo de pessoa.
+ *
+ *               responsavelLegal:
+ *                 type: string
+ *                 example: "Maria da Silva"
+ *                 description: Nome do responsável legal. Obrigatório para pessoa jurídica.
+ *
  *               redesSociais:
  *                 type: array
  *                 items:
  *                   type: string
- *               aceiteMarketing:
- *                 type: boolean
- *               parceiroIndicadorId:
- *                 type: string
- *               responsavelLegalNome:
- *                 type: string
- *               responsavelLegalCpf:
- *                 type: string
+ *                 example:
+ *                   - "https://instagram.com/exemplo"
+ *                   - "https://facebook.com/exemplo"
+ *
  *               cep:
  *                 type: string
+ *                 pattern: '^\d{8}$'
+ *                 example: "45700000"
+ *
  *               logradouro:
  *                 type: string
+ *                 example: "Rua Exemplo"
+ *
  *               numero:
  *                 type: string
+ *                 example: "123"
+ *
  *               bairro:
  *                 type: string
+ *                 example: "Centro"
+ *
  *               cidade:
  *                 type: string
+ *                 example: "Itapetinga"
+ *
  *               estado:
  *                 type: string
+ *                 example: "BA"
+ *
  *               complemento:
  *                 type: string
- *               expectativaGeracao:
- *                 type: number
+ *                 example: "Sala 2"
+ *
+ *               aceiteMarketing:
+ *                 type: boolean
+ *                 default: false
+ *                 example: true
+ *
+ *               parceiroIndicadorId:
+ *                 type: integer
+ *                 nullable: true
+ *                 minimum: 1
+ *                 example: 1
+ *
+ *               outroParceiro:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Indicação de outro parceiro"
+ *
+ *               comoConheceu:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Indicação"
+ *
+ *               observacao:
+ *                 type: string
+ *                 nullable: true
+ *                 example: "Parceiro interessado em coleta recorrente."
+ *
+ *               tipoParceiro:
+ *                 type: string
+ *                 enum:
+ *                   - INSTITUCIONAL
+ *                   - COMUNITARIO
+ *                   - SOLIDARIO
+ *                 example: COMUNITARIO
+ *
+ *               tipoPorte:
+ *                 type: string
+ *                 enum:
+ *                   - PEQUENO
+ *                   - MEDIO
+ *                   - GRANDE
+ *                 example: PEQUENO
+ *
  *               capacidadeBombona:
  *                 type: number
+ *                 format: double
+ *                 minimum: 0
+ *                 exclusiveMinimum: true
+ *                 example: 50
+ *
+ *               expectativaGeracao:
+ *                 type: number
+ *                 format: double
+ *                 minimum: 0
+ *                 example: 25
+ *
  *               nivelAtualPct:
  *                 type: number
- *               statusBombona:
- *                 type: string
- *                 enum: [VAZIA, PARCIAL, CHEIA, EM_COLETA]
- *               categoria:
- *                 oneOf:
- *                   - type: integer
- *                     enum: [1, 2, 3, 4, 5, 6, 7]
- *                   - type: string
- *                     example: Escola / Universidade
- *                 description: Aceita número da categoria ou o nome traduzido da categoria.
+ *                 minimum: 0
+ *                 maximum: 100
+ *                 example: 40
+ *
+ *               aceiteTermos:
+ *                 type: boolean
+ *                 enum:
+ *                   - true
+ *                 example: true
+ *
  *     responses:
  *       201:
  *         description: Parceiro cadastrado com sucesso
+ *
  *       400:
  *         description: Dados inválidos ou duplicados
  */
+
 router.post('/register', async (req, res) => {
   try {
     const result = await criarParceiroUseCase.execute(req.body);

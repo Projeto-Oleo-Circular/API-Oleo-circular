@@ -84,7 +84,7 @@ export class AtualizarStatusSolicitacaoUseCase {
     const endereco = `${pontoColeta.logradouro}, ${pontoColeta.numero} - ${pontoColeta.bairro}`;
 
     const emailTemplate = renderColetaEmail({
-      nome: parceiro.nomeRazaoSocial,
+      nome: parceiro.razaoSocial,
       endereco,
       dataColeta: data.dataAgendamento,
       status: coletaStatus,

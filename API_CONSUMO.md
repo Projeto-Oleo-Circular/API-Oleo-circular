@@ -13,7 +13,7 @@ curl:
 curl -X POST "http://localhost:3000/parceiros/register" \
   -H "Content-Type: application/json" \
   -d '{
-    "nomeRazaoSocial": "Cooperativa Exemplo",
+    "razaoSocial": "Cooperativa Exemplo",
     "email": "parceiro@exemplo.com",
     "senha": "SenhaForte123",
     "documento": "12345678000190",
@@ -134,7 +134,7 @@ curl -X POST http://localhost:3000/parceiros/register \
   -d '{
     "tipoPessoa": "JURIDICA",
     "tipoParceiro": "INSTITUCIONAL",
-    "nomeRazaoSocial": "Cooperativa Exemplo",
+    "razaoSocial": "Cooperativa Exemplo",
     "email": "parceiro@exemplo.com",
     "senha": "123456",
     "documento": "12345678000190",
@@ -580,7 +580,7 @@ Obs: os campos `categoria` e `categoriaNumero` aparecem em pontos de coleta — 
 ```json
 {
   "id": 123,
-  "nomeRazaoSocial": "Cooperativa Exemplo",
+  "razaoSocial": "Cooperativa Exemplo",
   "email": "parceiro@exemplo.com",
   "documento": "12345678000190",
   "statusAprovacaoParceiro": "PENDENTE",
@@ -599,7 +599,7 @@ Obs: os campos `categoria` e `categoriaNumero` aparecem em pontos de coleta — 
   "token": "eyJhbGci...",
   "usuario": {
     "id": 123,
-    "nomeRazaoSocial": "Cooperativa Exemplo",
+    "razaoSocial": "Cooperativa Exemplo",
     "email": "parceiro@exemplo.com"
   }
 }
@@ -614,7 +614,7 @@ Obs: os campos `categoria` e `categoriaNumero` aparecem em pontos de coleta — 
 ```json
 {
   "id": 123,
-  "nomeRazaoSocial": "Cooperativa Exemplo",
+  "razaoSocial": "Cooperativa Exemplo",
   "email": "parceiro@exemplo.com",
   "tipoParceiro": "INSTITUCIONAL"
 }

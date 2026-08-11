@@ -31,7 +31,7 @@ export class AtualizarStatusParceiroUseCase {
     // Substitua a chamada antiga do EmailService por esta:
     try {
       const template = renderParceiroStatusEmail({
-        nome: parceiroAtualizado.nomeRazaoSocial,
+        nome: parceiroAtualizado.razaoSocial,
         status: status,
         observacao: status === 'REJEITADO' ? observacao : undefined,
       });
@@ -46,7 +46,7 @@ export class AtualizarStatusParceiroUseCase {
     }
     return {
       id: parceiroAtualizado.id,
-      nomeRazaoSocial: parceiroAtualizado.nomeRazaoSocial,
+      razaoSocial: parceiroAtualizado.razaoSocial,
       statusAprovacaoParceiro: parceiroAtualizado.statusAprovacaoParceiro,
     };
   }

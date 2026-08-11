@@ -45,14 +45,13 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .insert({
         tipo_pessoa: data.tipoPessoa,
         tipo_parceiro: data.tipoParceiro,
-        nome_razao_social: data.nomeRazaoSocial,
-        nome_social: data.nomeSocial,
+        razao_social: data.razaoSocial,
+        nome: data.nome,
         email: data.email,
         senha_hash: data.senhaHash,
         documento: data.documento,
         telefone: data.telefone,
-        responsavel_legal_nome: data.responsavelLegalNome,
-        responsavel_legal_cpf: data.responsavelLegalCpf,
+        responsavel_legal: data.responsavelLegal,
         aceite_marketing: data.aceiteMarketing,
         parceiro_indicador_id: parceiroIndicadorIdFinal, // 🟢 Sempre salvo como ID válido!
         como_conheceu: data.comoConheceu ?? null,
@@ -106,14 +105,13 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
 
   async update(id: string | number, data: Partial<any>): Promise<Parceiro> {
     const updateData: any = {};
-    if (data.nomeRazaoSocial !== undefined) updateData.nome_razao_social = data.nomeRazaoSocial;
-    if (data.nomeSocial !== undefined) updateData.nome_social = data.nomeSocial;
+    if (data.razaoSocial !== undefined) updateData.razao_social = data.razaoSocial;
+    if (data.nome !== undefined) updateData.nome = data.nome;
     if (data.telefone !== undefined) updateData.telefone = data.telefone;
     if (data.statusAprovacaoParceiro !== undefined) updateData.status_aprovacao_parceiro = data.statusAprovacaoParceiro;
     if (data.parceiroIndicadorId !== undefined) updateData.parceiro_indicador_id = data.parceiroIndicadorId;
     if (data.aceiteMarketing !== undefined) updateData.aceite_marketing = data.aceiteMarketing;
-    if (data.responsavelLegalNome !== undefined) updateData.responsavel_legal_nome = data.responsavelLegalNome;
-    if (data.responsavelLegalCpf !== undefined) updateData.responsavel_legal_cpf = data.responsavelLegalCpf;
+    if (data.responsavelLegal !== undefined) updateData.responsavel_legal = data.responsavelLegal;
     if (data.redesSociais !== undefined) updateData.redes_sociais = data.redesSociais;
     if (data.tipoParceiro !== undefined) updateData.tipo_parceiro = data.tipoParceiro;
     if (data.comoConheceu !== undefined) updateData.como_conheceu = data.comoConheceu;
@@ -195,14 +193,13 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       id: data.id,
       tipoPessoa: data.tipo_pessoa,
       tipoParceiro: data.tipo_parceiro,
-      nomeRazaoSocial: data.nome_razao_social,
-      nomeSocial: data.nome_social,
+      razaoSocial: data.razao_social,
+      nome: data.nome,
       email: data.email,
       senhaHash: data.senha_hash,
       documento: data.documento,
       telefone: data.telefone,
-      responsavelLegalNome: data.responsavel_legal_nome,
-      responsavelLegalCpf: data.responsavel_legal_cpf,
+      responsavelLegal: data.responsavel_legal,
       redesSociais: data.redes_sociais,
       aceiteMarketing: data.aceite_marketing,
       parceiroIndicadorId: data.parceiro_indicador_id,

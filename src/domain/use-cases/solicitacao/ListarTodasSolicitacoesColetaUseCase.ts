@@ -49,7 +49,7 @@ export class ListarTodasSolicitacoesColetaUseCase {
         }
 
         const parceiroBusca = filters.parceiro?.toLowerCase() ?? filters.solicitante?.toLowerCase();
-        if (parceiroBusca && !item.parceiro?.nomeRazaoSocial?.toLowerCase().includes(parceiroBusca)) {
+        if (parceiroBusca && !item.parceiro?.razaoSocial?.toLowerCase().includes(parceiroBusca)) {
           return false;
         }
 

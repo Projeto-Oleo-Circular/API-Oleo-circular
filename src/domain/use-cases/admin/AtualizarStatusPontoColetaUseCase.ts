@@ -47,7 +47,7 @@ export class AtualizarStatusPontoColetaUseCase {
 
     try {
       const template = renderParceiroStatusEmail({
-        nome: parceiro.nomeRazaoSocial,
+        nome: parceiro.razaoSocial,
         status,
         observacao: status === 'REJEITADO' ? observacao : undefined,
       });

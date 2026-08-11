@@ -16,7 +16,7 @@ export class AprovarParceiroUseCase {
 
     return {
       id: parceiroAprovado.id,
-      nomeRazaoSocial: parceiroAprovado.nomeRazaoSocial,
+      razaoSocial: parceiroAprovado.razaoSocial,
       email: parceiroAprovado.email,
       statusAprovacaoParceiro: parceiroAprovado.statusAprovacaoParceiro,
     };

@@ -35,7 +35,7 @@ export class LoginParceiroUseCase {
       token,
       parceiro: {
         id: parceiro.id,
-        nomeRazaoSocial: parceiro.nomeRazaoSocial,
+        razaoSocial: parceiro.razaoSocial,
         email: parceiro.email,
         statusAprovacaoParceiro: parceiro.statusAprovacaoParceiro,
       },

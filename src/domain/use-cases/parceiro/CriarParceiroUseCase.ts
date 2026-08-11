@@ -1,8 +1,6 @@
 import bcrypt from 'bcrypt';
 import { CriarParceiroDTO } from '../../../shared/dtos/parceiro/CriarParceiroDTO';
 import {
-  ParceiroFisica,
-  ParceiroJuridica,
   Parceiro
 } from '../../entities/Parceiro';
 import { PontoColeta } from '../../entities/PontoColeta';
@@ -37,8 +35,8 @@ export class CriarParceiroUseCase {
       parceiroData = {
         tipoPessoa: 'FISICA',
         tipoParceiro: data.tipoParceiro ?? 'SOLIDARIO',
-        nomeRazaoSocial: data.nomeRazaoSocial,
-        nomeSocial: data.nomeSocial ?? null,
+        razaoSocial: data.razaoSocial,
+        nome: data.nome ,
         email: data.email,
         senhaHash,
         documento: data.documento,
@@ -55,8 +53,8 @@ export class CriarParceiroUseCase {
       parceiroData = {
         tipoPessoa: 'JURIDICA',
         tipoParceiro: data.tipoParceiro ?? 'INSTITUCIONAL',
-        nomeRazaoSocial: data.nomeRazaoSocial,
-        nomeSocial: data.nomeSocial ?? null,
+        razaoSocial: data.razaoSocial,
+        nome: data.nome ?? null,
         email: data.email,
         senhaHash,
         documento: data.documento,
@@ -68,8 +66,7 @@ export class CriarParceiroUseCase {
         comoConheceu: data.comoConheceu ?? null,  
         observacao: data.observacao ?? null,       
         statusAprovacaoParceiro: 'PENDENTE',
-        responsavelLegalNome: data.responsavelLegalNome!,
-        responsavelLegalCpf: data.responsavelLegalCpf!,
+        responsavelLegal: data.responsavelLegal,
       };
     }
 
@@ -94,7 +91,7 @@ export class CriarParceiroUseCase {
       nivelAtualPct: data.nivelAtualPct ?? 0,
       statusBombona: 'VAZIA',
       statusAprovacaoPontoColeta: 'PENDENTE',
-      nomePontoColeta: `Ponto ${data.nomeRazaoSocial}`,
+      nomePontoColeta: `Ponto ${data.razaoSocial}`,
     };
 
     await this.pontoColetaRepository.create(pontoColetaData);
@@ -142,16 +139,7 @@ export class CriarParceiroUseCase {
       throw new Error('Pessoa Jurídica deve ter um CNPJ como documento.');
     }
 
-    if (data.responsavelLegalCpf) {
-      try {
-        const cpfResponsavel = new Documento(data.responsavelLegalCpf);
-        if (cpfResponsavel.getTipo() !== 'CPF') {
-          throw new Error('CPF do responsável legal inválido.');
-        }
-      } catch (error) {
-        throw new Error('CPF do responsável legal inválido: ' + (error as Error).message);
-      }
-    }
+   
   }
 
   private determinarCapacidade(porte: string): number {
@@ -164,9 +152,9 @@ export class CriarParceiroUseCase {
     return capacidades[porte] ?? 20;
   }
 
-  private async enviarEmailConfirmacao(parceiro: { nomeRazaoSocial: string; email: string }) {
+  private async enviarEmailConfirmacao(parceiro: { razaoSocial: string; email: string , nome: string}) {
     const template = renderParceiroStatusEmail({
-      nome: parceiro.nomeRazaoSocial,
+      nome: parceiro.razaoSocial || parceiro.nome,
       status: 'PENDENTE',
     });
 

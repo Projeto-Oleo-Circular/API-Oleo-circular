@@ -53,7 +53,7 @@ export class ListarTodosPontosUseCase {
 
         if (filters.parceiro) {
           const nomeBusca = filters.parceiro.toLowerCase();
-          const nomeParceiro = item.parceiro?.nomeRazaoSocial?.toLowerCase() ?? '';
+          const nomeParceiro = item.parceiro?.razaoSocial?.toLowerCase() ?? '';
           if (!nomeParceiro.includes(nomeBusca)) {
             return false;
           }

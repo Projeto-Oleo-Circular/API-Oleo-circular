@@ -1,50 +1,78 @@
 // shared/dtos/parceiro/CriarParceiroDTO.ts
-
 import { z } from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 
+extendZodWithOpenApi(z);
 export const CriarParceiroDTOSchema = z
   .object({
-    // ==========================
-    // Dados de acesso
-    // ==========================
-    nomeRazaoSocial: z
+    nome: z
       .string()
       .trim()
-      .min(3, 'Nome/Razão Social é obrigatório'),
+      .min(3, 'Nome é obrigatório')
+      .openapi({
+        example: 'João da Silva',
+        description: 'Nome do parceiro',
+      }),
+
+    razaoSocial: z
+      .string()
+      .trim()
+      .min(3, 'Razão Social é obrigatória')
+      .optional()
+      .openapi({
+        example: 'Empresa Exemplo LTDA',
+        description: 'Razão social da empresa',
+      }),
 
     email: z
       .string()
       .trim()
-      .email('E-mail inválido'),
+      .email('E-mail inválido')
+      .openapi({
+        example: 'joao@email.com',
+      }),
 
     senha: z
       .string()
-      .min(6, 'Senha deve ter no mínimo 6 caracteres'),
+      .min(6, 'Senha deve ter no mínimo 6 caracteres')
+      .openapi({
+        example: '123456',
+      }),
 
     confirmarSenha: z
       .string()
-      .min(6, 'Confirmação da senha é obrigatória'),
+      .min(6, 'Confirmação da senha é obrigatória')
+      .openapi({
+        example: '123456',
+      }),
 
     telefone: z
       .string()
       .trim()
-      .regex(/^\d{10,11}$/, 'Telefone inválido'),
+      .regex(/^\d{10,11}$/, 'Telefone inválido')
+      .openapi({
+        example: '73999999999',
+      }),
 
-    // ==========================
-    // Tipo de pessoa
-    // ==========================
-    tipoPessoa: z.enum(['FISICA', 'JURIDICA'], {
-      message: 'Tipo de pessoa é obrigatório',
-    }),
+    tipoPessoa: z
+      .enum(['FISICA', 'JURIDICA'])
+      .openapi({
+        example: 'FISICA',
+      }),
 
-    // ==========================
-    // Perfil
-    // ==========================
     tipoPerfil: z
       .enum(['INSTITUCIONAL', 'COMUNITARIO', 'SOLIDARIO'])
-      .optional(),
+      .optional()
+      .openapi({
+        example: 'SOLIDARIO',
+      }),
 
-    categoriaPerfil: z.string().optional(),
+    categoriaPerfil: z
+      .string()
+      .optional()
+      .openapi({
+        example: 'Cooperativa',
+      }),
 
     categoria: z
       .union([
@@ -56,124 +84,200 @@ export const CriarParceiroDTOSchema = z
         z.literal(6),
         z.literal(7),
       ])
-      .optional(),
+      .optional()
+      .openapi({
+        example: 1,
+      }),
 
-    // ==========================
-    // Documento
-    // ==========================
     documento: z
       .string()
       .trim()
-      .regex(/^\d+$/, 'Documento deve conter apenas números'),
+      .regex(/^\d+$/, 'Documento deve conter apenas números')
+      .openapi({
+        example: '12345678901',
+        description: 'CPF ou CNPJ sem pontuação',
+      }),
 
-    responsavelLegalNome: z
+    responsavelLegal: z
       .string()
       .trim()
-      .optional(),
+      .optional()
+      .openapi({
+        example: 'Maria da Silva',
+      }),
 
-    responsavelLegalCpf: z
-      .string()
-      .trim()
-      .regex(/^\d+$/, 'CPF do responsável legal inválido')
-      .optional(),
+    redesSociais: z
+      .array(z.string().trim())
+      .optional()
+      .openapi({
+        example: [
+          'https://instagram.com/exemplo',
+        ],
+      }),
 
-    nomeSocial: z.string().trim().optional(),
-    redesSociais: z.array(z.string().trim()).optional(),
-    
-    // ==========================
-    // Endereço
-    // ==========================
     cep: z
       .string()
       .trim()
-      .regex(/^\d{8}$/, 'CEP inválido'),
+      .regex(/^\d{8}$/, 'CEP inválido')
+      .openapi({
+        example: '45700000',
+      }),
 
     logradouro: z
       .string()
       .trim()
-      .min(3, 'Logradouro é obrigatório'),
+      .min(3, 'Logradouro é obrigatório')
+      .openapi({
+        example: 'Rua Principal',
+      }),
 
     numero: z
       .string()
       .trim()
-      .min(1, 'Número é obrigatório'),
+      .min(1, 'Número é obrigatório')
+      .openapi({
+        example: '100',
+      }),
 
     bairro: z
       .string()
       .trim()
-      .min(2, 'Bairro é obrigatório'),
+      .min(2, 'Bairro é obrigatório')
+      .openapi({
+        example: 'Centro',
+      }),
 
     cidade: z
       .string()
       .trim()
-      .min(2, 'Cidade é obrigatória'),
+      .min(2, 'Cidade é obrigatória')
+      .openapi({
+        example: 'Itapetinga',
+      }),
 
     estado: z
       .string()
       .trim()
-      .optional(),
+      .optional()
+      .openapi({
+        example: 'BA',
+      }),
 
     complemento: z
       .string()
       .trim()
-      .optional(),
+      .optional()
+      .openapi({
+        example: 'Sala 02',
+      }),
 
-    latitude: z.number().optional(),
+    latitude: z
+      .number()
+      .optional()
+      .openapi({
+        example: -15.2489,
+      }),
 
-    longitude: z.number().optional(),
+    longitude: z
+      .number()
+      .optional()
+      .openapi({
+        example: -40.2477,
+      }),
 
-    // ==========================
-    // Informações adicionais
-    // ==========================
-    aceiteMarketing: z.boolean().default(false),
+    aceiteMarketing: z
+      .boolean()
+      .default(false)
+      .openapi({
+        example: false,
+      }),
 
     parceiroIndicadorId: z
       .number()
       .int()
       .positive()
       .nullable()
-      .optional(),
+      .optional()
+      .openapi({
+        example: 1,
+      }),
 
-    outroParceiro: z.string().trim().nullable().optional(),
+    outroParceiro: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .openapi({
+        example: 'Outro parceiro',
+      }),
 
-    comoConheceu: z.string().trim().nullable().optional(),
+    comoConheceu: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .openapi({
+        example: 'Indicação',
+      }),
 
-    observacao: z.string().trim().nullable().optional(),
+    observacao: z
+      .string()
+      .trim()
+      .nullable()
+      .optional()
+      .openapi({
+        example: 'Observação adicional',
+      }),
 
     tipoParceiro: z
       .enum(['INSTITUCIONAL', 'COMUNITARIO', 'SOLIDARIO'])
-      .optional(),
+      .optional()
+      .openapi({
+        example: 'SOLIDARIO',
+      }),
 
     tipoPorte: z
       .enum(['PEQUENO', 'MEDIO', 'GRANDE'])
-      .optional(),
-      
+      .optional()
+      .openapi({
+        example: 'PEQUENO',
+      }),
+
     capacidadeBombona: z
       .number()
       .positive()
-      .optional(),
+      .optional()
+      .openapi({
+        example: 100,
+      }),
 
     expectativaGeracao: z
       .number()
-      .nonnegative('A expectativa de geração não pode ser negativa')
-      .optional(),
+      .nonnegative()
+      .optional()
+      .openapi({
+        example: 50,
+      }),
 
     nivelAtualPct: z
       .number()
-      .min(0, 'O nível não pode ser menor que 0')
-      .max(100, 'O nível não pode ser maior que 100')
-      .optional(),
+      .min(0)
+      .max(100)
+      .optional()
+      .openapi({
+        example: 30,
+      }),
 
     aceiteTermos: z
       .boolean()
       .refine((value) => value === true, {
         message: 'É necessário aceitar os termos de uso.',
+      })
+      .openapi({
+        example: true,
       }),
   })
   .superRefine((data, ctx) => {
-    // ==========================
-    // Confirmação de senha
-    // ==========================
     if (data.senha !== data.confirmarSenha) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -182,9 +286,6 @@ export const CriarParceiroDTOSchema = z
       });
     }
 
-    // ==========================
-    // Pessoa Física
-    // ==========================
     if (data.tipoPessoa === 'FISICA') {
       if (data.documento.length !== 11) {
         ctx.addIssue({
@@ -194,28 +295,16 @@ export const CriarParceiroDTOSchema = z
         });
       }
 
-      if (data.responsavelLegalNome) {
+      if (data.responsavelLegal) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ['responsavelLegalNome'],
+          path: ['responsavelLegal'],
           message:
             'Pessoa Física não deve informar responsável legal',
         });
       }
-
-      if (data.responsavelLegalCpf) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['responsavelLegalCpf'],
-          message:
-            'Pessoa Física não deve informar CPF do responsável legal',
-        });
-      }
     }
 
-    // ==========================
-    // Pessoa Jurídica
-    // ==========================
     if (data.tipoPessoa === 'JURIDICA') {
       if (data.documento.length !== 14) {
         ctx.addIssue({
@@ -225,28 +314,17 @@ export const CriarParceiroDTOSchema = z
         });
       }
 
-      if (!data.responsavelLegalNome?.trim()) {
+      if (!data.responsavelLegal?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          path: ['responsavelLegalNome'],
-          message: 'Nome do responsável legal é obrigatório',
-        });
-      }
-
-      if (!data.responsavelLegalCpf?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['responsavelLegalCpf'],
-          message: 'CPF do responsável legal é obrigatório',
-        });
-      } else if (data.responsavelLegalCpf.length !== 11) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['responsavelLegalCpf'],
-          message: 'CPF do responsável legal deve possuir 11 dígitos',
+          path: ['responsavelLegal'],
+          message:
+            'Nome do responsável legal é obrigatório',
         });
       }
     }
   });
 
-export type CriarParceiroDTO = z.infer<typeof CriarParceiroDTOSchema>;
+export type CriarParceiroDTO = z.infer<
+  typeof CriarParceiroDTOSchema
+>;

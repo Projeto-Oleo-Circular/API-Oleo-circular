@@ -155,7 +155,7 @@ router.get('/me', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (r
  *                 properties:
  *                   id:
  *                     type: string
- *                   nomeRazaoSocial:
+ *                   razaoSocial:
  *                     type: string
  *                   email:
  *                     type: string
@@ -192,7 +192,7 @@ router.get('/parceiros/pendentes', AuthMiddleware.verify, AuthMiddleware.require
  *                 properties:
  *                   id:
  *                     type: string
- *                   nomeRazaoSocial:
+ *                   razaoSocial:
  *                     type: string
  *                   email:
  *                     type: string

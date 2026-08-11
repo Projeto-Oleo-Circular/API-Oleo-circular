@@ -3,8 +3,8 @@ export interface Parceiro {
   email: string;
   senhaHash: string;
   documento: string;
-  nomeRazaoSocial: string; 
-  nomeSocial?: string | null; 
+  razaoSocial: string; 
+  nome: string; 
   telefone?: string | null;
   redesSociais?: string[] | null;
   aceiteMarketing: boolean;
@@ -14,14 +14,8 @@ export interface Parceiro {
   statusAprovacaoParceiro: 'PENDENTE' | 'APROVADO' | 'REJEITADO';
   tipoPorte?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
   criadoEm: string;
+  tipoPessoa: null;
+  responsavelLegal: string
+
 }
 
-export interface ParceiroFisica extends Parceiro {
-  tipoPessoa: 'FISICA';
-}
-
-export interface ParceiroJuridica extends Parceiro {
-  tipoPessoa: 'JURIDICA';
-  responsavelLegalNome: string;
-  responsavelLegalCpf: string;
-}
