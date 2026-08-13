@@ -37,8 +37,8 @@ const authenticatedUserSchema = z.object({
 // ======================
 
 export const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 1000,                   // 5 tentativas
+  windowMs: 10 * 60 * 1000, // 10 minutos
+  max: 6,                   // 6 tentativas
   standardHeaders: true,
   legacyHeaders: false,
   message: {
