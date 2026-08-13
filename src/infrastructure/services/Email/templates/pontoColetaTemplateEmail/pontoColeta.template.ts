@@ -85,7 +85,7 @@ export function renderPontoColetaStatusEmail({
           ctaLabel: 'Ver meus pontos',
 
           ctaUrl:
-            'https://OleoCircular.com.br/pontos',
+            'https://typper.shop/login',
         }),
       };
 

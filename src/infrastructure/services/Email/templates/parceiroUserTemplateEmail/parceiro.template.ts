@@ -83,7 +83,7 @@ export function renderParceiroStatusEmail({
           ctaLabel: 'Acessar plataforma',
 
           ctaUrl:
-            'https://Oleo Circular.com.br/login',
+            'https://typper.shop/login',
         }),
       };
 

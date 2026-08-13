@@ -171,20 +171,6 @@ export const CriarParceiroDTOSchema = z
         example: 'Sala 02',
       }),
 
-    latitude: z
-      .number()
-      .optional()
-      .openapi({
-        example: -15.2489,
-      }),
-
-    longitude: z
-      .number()
-      .optional()
-      .openapi({
-        example: -40.2477,
-      }),
-
     aceiteMarketing: z
       .boolean()
       .default(false)

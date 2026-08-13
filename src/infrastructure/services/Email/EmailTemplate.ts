@@ -157,15 +157,6 @@ background:${COLORS.greenDark};
 padding:40px 24px;
 ">
 
-<img
-src="${LOGO_SRC}"
-alt="Oleo Circular"
-width="80"
-style="
-display:block;
-height:auto;
-">
-
 </td>
 
 </tr>

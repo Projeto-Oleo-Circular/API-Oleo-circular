@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 
 import parceiroRoutes from './infrastructure/http/routes/parceiro.routes';
@@ -10,6 +9,8 @@ import pontoColetaRoutes from './infrastructure/http/routes/pontoColeta.routes';
 import adminRoutes from './infrastructure/http/routes/admin.routes';
 import parceiroIndicadorRoutes from './infrastructure/http/routes/parceiroIndicador.routes';
 import solicitacaoColeta from './infrastructure/http/routes/solicitacao.routes';
+
+// Importação corrigida
 import { swaggerSpec } from './infrastructure/http/docs/swagger';
 
 dotenv.config();
@@ -18,7 +19,7 @@ const app = express();
 const port = Number(process.env.PORT || 3000);
 
 app.disable('x-powered-by');
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1);
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? '')
   .split(',')
@@ -51,10 +52,9 @@ app.use(
   })
 );
 
-
-
 app.use(express.json({ limit: '1mb' }));
 
+// Configuração do Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/parceiros', parceiroRoutes);
@@ -62,7 +62,6 @@ app.use('/pontos-coleta', pontoColetaRoutes);
 app.use('/admin', adminRoutes);
 app.use('/parceiros-indicadores', parceiroIndicadorRoutes);
 app.use('/solicitacoes-coleta', solicitacaoColeta);
-
 
 app.get('/health', (_req, res) => {
   res.status(200).json({

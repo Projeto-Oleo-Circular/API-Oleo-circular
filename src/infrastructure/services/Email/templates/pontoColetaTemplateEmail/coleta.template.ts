@@ -84,7 +84,7 @@ export function renderColetaEmail({
           `,
 
           ctaLabel: 'Ver minhas coletas',
-          ctaUrl: 'https://OleoCircular.com.br/coletas',
+          ctaUrl: 'https://typper.shop/login',
         }),
       };
 
@@ -144,7 +144,7 @@ export function renderColetaEmail({
           `,
 
           ctaLabel: 'Solicitar nova coleta',
-          ctaUrl: 'https://Oleo Circular.com.br/coletas',
+          ctaUrl: 'https://typper.shop/login',
         }),
       };
 

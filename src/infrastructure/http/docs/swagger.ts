@@ -1,7 +1,20 @@
+import { OpenAPIRegistry, OpenApiGeneratorV3, extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 import swaggerJsdoc from 'swagger-jsdoc';
-import dotenv from 'dotenv';
+import { z } from 'zod';
 
-dotenv.config();
+import {
+  CriarParceiroDTOSchema,
+  LoginDTOSchema,
+} from '../../../shared/dtos/parceiro';
+extendZodWithOpenApi(z);
+
+const registry = new OpenAPIRegistry();
+
+registry.register('CriarParceiroDTO', CriarParceiroDTOSchema);
+registry.register('LoginDTO', LoginDTOSchema);
+
+const generator = new OpenApiGeneratorV3(registry.definitions);
+const zodComponents = generator.generateComponents();
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -13,7 +26,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: process.env.API_URL,
+        url: process.env.API_URL || 'http://localhost:3000',
         description:
           process.env.NODE_ENV === 'production'
             ? 'Servidor de Produção'
@@ -27,6 +40,9 @@ const options: swaggerJsdoc.Options = {
           scheme: 'bearer',
           bearerFormat: 'JWT',
         },
+      },
+      schemas: {
+        ...zodComponents.components?.schemas,
       },
     },
     security: [

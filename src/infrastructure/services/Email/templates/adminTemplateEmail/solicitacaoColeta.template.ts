@@ -49,7 +49,7 @@ export function novaSolicitacaoColetaAdminTemplate({
         <p><strong>Volume informado:</strong> ${volume} litros</p>
       `,
       ctaLabel: 'Abrir painel administrativo',
-      ctaUrl: 'https://OleoCircular.com.br/admin/solicitacoes',
+      ctaUrl: 'https://typper.shop/admin/login',
       secondaryContentHtml: `
         <strong>Próximos passos</strong>
         <p>Verifique e aprove ou rejeite esta solicitação no painel administrativo.</p>

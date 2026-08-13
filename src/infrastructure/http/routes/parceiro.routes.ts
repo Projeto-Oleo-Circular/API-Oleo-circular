@@ -1,16 +1,17 @@
 import { Router } from 'express';
-import axios from 'axios';
 
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
 import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
+
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
 import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
-import { ListarSolicitacoesColetaUseCase } from "../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase";
+import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
+
 import { ParceiroController } from '../controllers/ParceiroController';
-const solicitacaoRepository = new SupabaseSolicitacaoRepository();
+
 import {
   AuthMiddleware,
   loginLimiter,
@@ -19,51 +20,37 @@ import {
 const router = Router();
 
 // ======================
-// DEPENDÊNCIAS
+// DEPENDÊNCIAS & CONTROLLER
 // ======================
 
 const parceiroRepository = new SupabaseParceiroRepository();
 const pontoColetaRepository = new SupabasePontoColetaRepository();
+const solicitacaoRepository = new SupabaseSolicitacaoRepository();
 
-const criarParceiroUseCase = new CriarParceiroUseCase(
-  parceiroRepository,
-  pontoColetaRepository
-);
+const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
+const loginParceiroUseCase = new LoginParceiroUseCase(parceiroRepository);
+const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(parceiroRepository, pontoColetaRepository);
+const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(parceiroRepository);
+const listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(solicitacaoRepository, pontoColetaRepository);
 
-const loginParceiroUseCase = new LoginParceiroUseCase(
-  parceiroRepository
-);
-
-const getParceiroLogadoUseCase = new  GetParceiroLogadoUseCase(
-  parceiroRepository,
-  pontoColetaRepository
-);
-
-const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(
-  parceiroRepository
-);
-const  listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(
-    solicitacaoRepository,
-    pontoColetaRepository
-    );
 const parceiroController = new ParceiroController(
+  criarParceiroUseCase,
+  loginParceiroUseCase,
   getParceiroLogadoUseCase,
   verificarDisponibilidadeUseCase,
   listarSolicitacoesColetaUseCase
-  
 );
 
-// ======================
-// SWAGGER / ROTAS
-// ======================
-
 /**
- * @swagger
+ * @openapi
  * tags:
  *   - name: Parceiro
- *     description: Operações relacionadas aos parceiros
+ *     description: Operações relacionadas ao cadastro, autenticação e gestão do parceiro
  */
 
+// ======================
+// SWAGGER: DOCUMENTAÇÃO DAS ROTAS
+// ======================
 
 /**
  * @openapi
@@ -77,264 +64,44 @@ const parceiroController = new ParceiroController(
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - nome
- *               - razaoSocial
- *               - email
- *               - senha
- *               - confirmarSenha
- *               - telefone
- *               - tipoPessoa
- *               - documento
- *               - cep
- *               - logradouro
- *               - numero
- *               - bairro
- *               - cidade
- *               - aceiteTermos
- *             properties:
- *
- *               nome:
- *                 type: string
- *                 example: "João da Silva"
- *                 description: Nome do parceiro.
- *
- *               razaoSocial:
- *                 type: string
- *                 example: "Empresa Exemplo LTDA"
- *                 description: Razão social do parceiro.
- *
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "joao@exemplo.com"
- *
- *               senha:
- *                 type: string
- *                 format: password
- *                 minLength: 6
- *                 example: "123456"
- *
- *               confirmarSenha:
- *                 type: string
- *                 format: password
- *                 minLength: 6
- *                 example: "123456"
- *
- *               telefone:
- *                 type: string
- *                 example: "77999999999"
- *                 description: Telefone contendo apenas números.
- *
- *               tipoPessoa:
- *                 type: string
- *                 enum:
- *                   - FISICA
- *                   - JURIDICA
- *                 example: JURIDICA
- *
- *               tipoPerfil:
- *                 type: string
- *                 enum:
- *                   - INSTITUCIONAL
- *                   - COMUNITARIO
- *                   - SOLIDARIO
- *                 example: COMUNITARIO
- *
- *               categoriaPerfil:
- *                 type: string
- *                 example: "Associação"
- *
- *               categoria:
- *                 type: integer
- *                 enum:
- *                   - 1
- *                   - 2
- *                   - 3
- *                   - 4
- *                   - 5
- *                   - 6
- *                   - 7
- *                 example: 1
- *
- *               documento:
- *                 type: string
- *                 pattern: '^\d+$'
- *                 example: "12345678000199"
- *                 description: CPF ou CNPJ, de acordo com o tipo de pessoa.
- *
- *               responsavelLegal:
- *                 type: string
- *                 example: "Maria da Silva"
- *                 description: Nome do responsável legal. Obrigatório para pessoa jurídica.
- *
- *               redesSociais:
- *                 type: array
- *                 items:
- *                   type: string
- *                 example:
- *                   - "https://instagram.com/exemplo"
- *                   - "https://facebook.com/exemplo"
- *
- *               cep:
- *                 type: string
- *                 pattern: '^\d{8}$'
- *                 example: "45700000"
- *
- *               logradouro:
- *                 type: string
- *                 example: "Rua Exemplo"
- *
- *               numero:
- *                 type: string
- *                 example: "123"
- *
- *               bairro:
- *                 type: string
- *                 example: "Centro"
- *
- *               cidade:
- *                 type: string
- *                 example: "Itapetinga"
- *
- *               estado:
- *                 type: string
- *                 example: "BA"
- *
- *               complemento:
- *                 type: string
- *                 example: "Sala 2"
- *
- *               aceiteMarketing:
- *                 type: boolean
- *                 default: false
- *                 example: true
- *
- *               parceiroIndicadorId:
- *                 type: integer
- *                 nullable: true
- *                 minimum: 1
- *                 example: 1
- *
- *               outroParceiro:
- *                 type: string
- *                 nullable: true
- *                 example: "Indicação de outro parceiro"
- *
- *               comoConheceu:
- *                 type: string
- *                 nullable: true
- *                 example: "Indicação"
- *
- *               observacao:
- *                 type: string
- *                 nullable: true
- *                 example: "Parceiro interessado em coleta recorrente."
- *
- *               tipoParceiro:
- *                 type: string
- *                 enum:
- *                   - INSTITUCIONAL
- *                   - COMUNITARIO
- *                   - SOLIDARIO
- *                 example: COMUNITARIO
- *
- *               tipoPorte:
- *                 type: string
- *                 enum:
- *                   - PEQUENO
- *                   - MEDIO
- *                   - GRANDE
- *                 example: PEQUENO
- *
- *               capacidadeBombona:
- *                 type: number
- *                 format: double
- *                 minimum: 0
- *                 exclusiveMinimum: true
- *                 example: 50
- *
- *               expectativaGeracao:
- *                 type: number
- *                 format: double
- *                 minimum: 0
- *                 example: 25
- *
- *               nivelAtualPct:
- *                 type: number
- *                 minimum: 0
- *                 maximum: 100
- *                 example: 40
- *
- *               aceiteTermos:
- *                 type: boolean
- *                 enum:
- *                   - true
- *                 example: true
- *
+ *             $ref: '#/components/schemas/CriarParceiroDTO'
  *     responses:
  *       201:
- *         description: Parceiro cadastrado com sucesso
- *
+ *         description: Parceiro cadastrado com sucesso.
  *       400:
- *         description: Dados inválidos ou duplicados
+ *         description: Dados inválidos ou e-mail/CNPJ já cadastrado.
  */
-
-router.post('/register', async (req, res) => {
-  try {
-    const result = await criarParceiroUseCase.execute(req.body);
-
-    return res.status(201).json(result);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Erro inesperado';
-
-    return res.status(400).json({ message });
-  }
-});
+router.post(
+  '/register',
+  parceiroController.criar
+);
 
 /**
  * @openapi
  * /parceiros/login:
- *   post:
+ *    post:
  *     tags:
  *       - Parceiro
- *     summary: Login de parceiro
+ *     summary: Cadastro de parceiro
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             required:
- *               - email
- *               - senha
- *             properties:
- *               email:
- *                 type: string
- *               senha:
- *                 type: string
+ *             $ref: '#/components/schemas/LoginDTO'
  *     responses:
  *       200:
- *         description: Login realizado com sucesso
+ *         description: Login realizado com sucesso.
  *       401:
- *         description: Credenciais inválidas
+ *         description: Credenciais inválidas.
  *       429:
- *         description: Muitas tentativas de login
+ *         description: Muitas tentativas de login. Tente novamente mais tarde.
  */
-router.post('/login', loginLimiter, async (req, res) => {
-  try {
-    const result = await loginParceiroUseCase.execute(req.body);
-
-    return res.status(200).json(result);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Erro inesperado';
-
-    return res.status(401).json({ message });
-  }
-});
+router.post(
+  '/login',
+  loginLimiter,
+  parceiroController.login
+);
 
 /**
  * @openapi
@@ -342,20 +109,20 @@ router.post('/login', loginLimiter, async (req, res) => {
  *   get:
  *     tags:
  *       - Parceiro
- *     summary: Dados do parceiro logado
+ *     summary: Obtém dados do parceiro autenticado
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Dados do parceiro
+ *         description: Dados do parceiro autenticado.
  *       401:
- *         description: Não autorizado
+ *         description: Não autorizado ou token inválido.
  */
 router.get(
   '/me',
   AuthMiddleware.verify,
   AuthMiddleware.requireRole('parceiro'),
-  (req, res) => parceiroController.me(req, res)
+  parceiroController.me
 );
 
 /**
@@ -364,22 +131,20 @@ router.get(
  *   put:
  *     tags:
  *       - Parceiro
- *     summary: Realiza logout do parceiro
+ *     summary: Encerra a sessão do parceiro
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Logout realizado com sucesso
+ *         description: Logout realizado com sucesso.
+ *       401:
+ *         description: Não autorizado.
  */
 router.put(
   '/logout',
   AuthMiddleware.verify,
   AuthMiddleware.requireRole('parceiro'),
-  (_req, res) => {
-    return res.status(200).json({
-      message: 'Logout realizado com sucesso. Descarte o token no cliente.',
-    });
-  }
+  parceiroController.logout
 );
 
 /**
@@ -388,62 +153,27 @@ router.put(
  *   get:
  *     tags:
  *       - Parceiro
- *     summary: Buscar endereço por CEP
+ *     summary: Busca endereço a partir do CEP
  *     parameters:
  *       - in: path
  *         name: cep
  *         required: true
  *         schema:
  *           type: string
+ *         description: CEP com 8 dígitos (apenas números ou formatado)
+ *         example: "01001000"
  *     responses:
  *       200:
- *         description: Dados do endereço
+ *         description: Endereço encontrado.
  *       400:
- *         description: CEP inválido
+ *         description: CEP inválido.
  *       404:
- *         description: CEP não encontrado
+ *         description: CEP não encontrado.
  */
-router.get('/buscar-cep/:cep', async (req, res) => {
-  try {
-    const { cep } = req.params;
-    const cepLimpo = cep.replace(/\D/g, '');
-
-    if (cepLimpo.length !== 8) {
-      return res.status(400).json({
-        message: 'CEP inválido',
-      });
-    }
-
-    const response = await axios.get(
-      `https://viacep.com.br/ws/${cepLimpo}/json/`
-    );
-
-    if (response.data.erro) {
-      return res.status(404).json({
-        message: 'CEP não encontrado',
-      });
-    }
-
-    const endereco = {
-      cep: response.data.cep.replace(/\D/g, ''),
-      logradouro: response.data.logradouro,
-      bairro: response.data.bairro,
-      cidade: response.data.localidade,
-      estado: response.data.uf,
-      complemento: response.data.complemento,
-      latitude: null,
-      longitude: null,
-    };
-
-    return res.status(200).json(endereco);
-  } catch (error) {
-    console.error('Erro ao buscar CEP:', error);
-
-    return res.status(500).json({
-      message: 'Erro ao buscar dados do CEP',
-    });
-  }
-});
+router.get(
+  '/buscar-cep/:cep',
+  parceiroController.buscarCep
+);
 
 /**
  * @openapi
@@ -451,26 +181,59 @@ router.get('/buscar-cep/:cep', async (req, res) => {
  *   get:
  *     tags:
  *       - Parceiro
- *     summary: Verificar disponibilidade de e-mail ou documento
+ *     summary: Verifica disponibilidade de e-mail ou CNPJ
  *     parameters:
  *       - in: query
  *         name: email
- *         required: false
  *         schema:
  *           type: string
+ *         description: E-mail a ser verificado
  *       - in: query
- *         name: documento
- *         required: false
+ *         name: cnpj
  *         schema:
  *           type: string
+ *         description: CNPJ a ser verificado
  *     responses:
  *       200:
- *         description: Status de disponibilidade retornado com sucesso
- *       400:
- *         description: Parâmetro inválido ou ausente
+ *         description: Retorna se o parâmetro está disponível ou em uso.
  */
-router.get('/verificar-disponibilidade', (req, res) => 
-  parceiroController.verificarDisponibilidade(req, res)
+router.get(
+  '/verificar-disponibilidade',
+  parceiroController.verificarDisponibilidade
+);
+
+/**
+ * @openapi
+ * /parceiros/solicitacoes:
+ *   get:
+ *     tags:
+ *       - Parceiro
+ *     summary: Lista as solicitações de coleta vinculadas ao parceiro
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *         description: "Filtrar por status (ex: PENDENTE, CONCLUIDO)"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número da página
+ *     responses:
+ *       200:
+ *         description: Lista de solicitações recuperada.
+ *       401:
+ *         description: Não autorizado.
+ */
+router.get(
+  '/solicitacoes',
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('parceiro'),
+  parceiroController.listar
 );
 
 export default router;
