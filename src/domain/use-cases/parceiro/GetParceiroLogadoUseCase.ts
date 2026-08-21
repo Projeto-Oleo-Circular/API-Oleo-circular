@@ -22,7 +22,6 @@ export class GetParceiroLogadoUseCase {
       documento,
       telefone,
       aceiteMarketing,
-      tipoParceiro,
       email,
       redesSociais,
       ...parceiroSeguro
