@@ -32,6 +32,7 @@ const listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(
 
 const solicitacaoController = new SolicitacaoColetaController(
   criarSolicitacaoUseCase,
+  listarSolicitacoesColetaUseCase
 );
 
 // ======================
@@ -141,6 +142,11 @@ router.post(
  *       401:
  *         description: Usuário não autenticado
  */
-
+router.get(
+  '/',
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('parceiro'),
+  (req, res) => solicitacaoController.listar(req, res),
+);
 
 export default router;
