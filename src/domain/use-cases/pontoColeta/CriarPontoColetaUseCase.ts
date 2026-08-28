@@ -41,6 +41,8 @@ export class CriarPontoColetaUseCase {
       nivelAtualPct: data.nivelAtualPct ?? 0,
       statusBombona: data.statusBombona ?? 'VAZIA',
       statusAprovacaoPontoColeta: 'PENDENTE',
+      longitude: String(data.longitude),
+      latitude:String(data.latitude)
     };
 
     // 3. Persistência

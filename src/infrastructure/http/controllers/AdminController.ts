@@ -9,6 +9,10 @@ import { AtualizarStatusSolicitacaoUseCase } from '../../../domain/use-cases/sol
 import { ListarTodasSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarTodasSolicitacoesColetaUseCase';
 import { ListarSolicitacoesColetaQuerySchema } from '../../../shared/dtos/solicitacaoColeta/ListarSolicitacoesColetaQueryDTO';
 import { ListarPontosColetaQuerySchema } from '../../../shared/dtos/pontoColeta/ListarPontosColetaQueryDTO';
+import { GetAlogadoUseCase} from '../../../domain/use-cases/admin/getUserAUseCase'
+import{AdminManageUseCase } from '../../../domain/use-cases/admin/AdminManageUseCase'
+import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
+
 
 export class AdminController {
   constructor(
@@ -20,7 +24,11 @@ export class AdminController {
     private readonly listarTodosPontosUseCase: ListarTodosPontosUseCase,
     private readonly atualizarStatusSolicitacaoUseCase: AtualizarStatusSolicitacaoUseCase,
     private readonly listarTodasSolicitacoesColetaUseCase: ListarTodasSolicitacoesColetaUseCase,
-  ) {}
+    private readonly getUser : GetAlogadoUseCase,
+    private readonly adminUseCase: AdminManageUseCase ,
+        private readonly criarParceiroUseCase: CriarParceiroUseCase,
+
+) {}
 
   async login(req: Request, res: Response): Promise<void> {
     try {
@@ -111,12 +119,34 @@ export class AdminController {
   }
 
   async me(req: Request, res: Response): Promise<void> {
-    res.status(200).json({
-      id: req.user?.id,
-      email: req.user?.email,
-      tipo: req.user?.tipo,
-    });
+  try {
+    // Obtém o ID do usuário autenticado
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Usuário não autenticado' });
+      return;
+    }
+
+    // Busca os dados completos do admin usando o ID
+    const admin = await this.getUser.execute(userId);
+    if (!admin) {
+      res.status(404).json({ message: 'Admin não encontrado' });
+      return;
+    }
+
+    // Retorna os dados (incluindo email, que pode vir do req.user ou do admin)
+   res.status(200).json({
+  id: admin.id,
+  email: admin.email, // string
+  nome: admin.nome,
+  nivelAcesso: admin.nivelAcesso,
+  ultimoAcesso: admin.ultimoAcesso,
+});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao carregar perfil' });
   }
+}
 
   async atualizarStatus(req: Request, res: Response): Promise<void> {
     try {
@@ -147,5 +177,110 @@ export class AdminController {
       const message = error instanceof Error ? error.message : 'Erro inesperado';
       res.status(400).json({ message });
     }
-  }
+    }
+    async criarAdmin(req: Request, res: Response) {
+    try {
+      const admin = await this.adminUseCase.criarAdmin(req.body);
+      res.status(201).json(admin);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
 }
+
+  async atualizarAdmin(req: Request, res: Response) {
+    try {
+      const admin = await this.adminUseCase.atualizarAdmin(Number(req.params.id), req.body);
+      res.json(admin);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async alterarSenhaAdmin(req: Request, res: Response) {
+    try {
+      const { id, senhaAtual, novaSenha } = req.body;
+      await this.adminUseCase.alterarSenhaAdmin(id, senhaAtual, novaSenha);
+      res.json({ message: 'Senha alterada com sucesso' });
+    } catch (error) {
+     const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    
+    }
+  }
+
+  // PARCEIRO
+  async criarParceiro(req: Request, res: Response) {
+    try {
+      const parceiro = await this.criarParceiroUseCase.execute(req.body)
+      res.status(201).json(parceiro);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async atualizarParceiro(req: Request, res: Response) {
+    try {
+      const parceiro = await this.adminUseCase.atualizarParceiro(Number(req.params.id), req.body);
+      res.json(parceiro);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async excluirParceiro(req: Request, res: Response) {
+    try {
+      await this.adminUseCase.excluirParceiro(Number(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  // ===================== PARCEIROS INDICADORES (NOVOS) =====================
+  async criarIndicador(req: Request, res: Response): Promise<void> {
+    try {
+      const indicador = await this.adminUseCase.criarIndicador(req.body);
+      res.status(201).json(indicador);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+
+  async listarIndicadoresAtivos(req: Request, res: Response): Promise<void> {
+    try {
+      const indicadores = await this.adminUseCase.listarIndicadoresAtivos();
+      res.status(200).json(indicadores);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async atualizarIndicador(req: Request, res: Response): Promise<void> {
+    try {
+      const indicador = await this.adminUseCase.atualizarIndicador(Number(req.params.id), req.body);
+      res.json(indicador);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+
+  async excluirIndicador(req: Request, res: Response): Promise<void> {
+    try {
+      await this.adminUseCase.excluirIndicador(Number(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+  }
+

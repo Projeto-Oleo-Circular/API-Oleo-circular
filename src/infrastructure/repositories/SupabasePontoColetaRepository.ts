@@ -23,6 +23,8 @@ export class SupabasePontoColetaRepository implements IPontoColetaRepository {
         status_bombona: data.statusBombona,
         status_aprovacao_ponto_coleta: data.statusAprovacaoPontoColeta,
         nome_ponto_coleta: data.nomePontoColeta,
+        longitude: data.longitude,
+        latitude:data.latitude
       })
       .select()
       .single();
@@ -73,6 +75,9 @@ async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoCole
   if (data.statusBombona !== undefined) updateData.status_bombona = data.statusBombona;
   if (data.statusAprovacaoPontoColeta !== undefined) updateData.status_aprovacao_ponto_coleta = data.statusAprovacaoPontoColeta;
   if (data.nomePontoColeta !== undefined) updateData.nome_ponto_coleta = data.nomePontoColeta;
+  if (data.longitude !== undefined) updateData.logintude=data.longitude;
+  if(data.latitude !== undefined) updateData.latitude=data.latitude;
+
 
   updateData.updated = new Date().toISOString(); 
 
@@ -140,5 +145,7 @@ async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoCole
     statusAprovacaoPontoColeta: data.status_aprovacao_ponto_coleta,
     nomePontoColeta: data.nome_ponto_coleta,
     atualizadoEm: data.updated,
+    latitude:data.latitude,
+    longitude:data.longitude
   };
 } }

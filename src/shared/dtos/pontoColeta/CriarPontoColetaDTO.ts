@@ -20,6 +20,7 @@ export const CriarPontoColetaDTOSchema = z.object({
       z.literal(5),
       z.literal(6),
       z.literal(7),
+        z.literal(8),
     ]),
   ),
   cep: z.string().min(8).max(9),
@@ -38,6 +39,22 @@ export const CriarPontoColetaDTOSchema = z.object({
     'CHEIA',
     'EM_COLETA',
   ]).optional(),
+     latitude: z
+  .string()
+  .trim()
+  .optional()
+  .transform((val) => (val ? Number(val) : null)) // converte para número se preenchido
+  .openapi({
+    example: "-23.550520", // São Paulo
+  }),
+longitude: z
+  .string()
+  .trim()
+  .optional()
+  .transform((val) => (val ? Number(val) : null))
+  .openapi({
+    example: "-46.633308",
+  }),
 });
 
 export type CriarPontoColetaDTO = z.infer<typeof CriarPontoColetaDTOSchema>;

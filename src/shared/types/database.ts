@@ -3,7 +3,6 @@ export interface AdminRow {
   nome: string;
   email: string;
   senha_hash: string;
-  licenca: string | null;
   nivel_acesso: string;
   criado_em: string;
   ultimo_acesso: string | null;
@@ -39,8 +38,8 @@ export interface PontoColetaRow {
   logradouro: string;
   numero: string;
   bairro: string;
-  latitude: number | null;
-  longitude: number | null;
+  latitude: string;
+  longitude: string;
   capacidade_bombona: number | null;
   nivel_atual_pct: number | null;
   status_bombona: string;

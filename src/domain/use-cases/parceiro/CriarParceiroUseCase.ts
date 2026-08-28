@@ -92,6 +92,8 @@ export class CriarParceiroUseCase {
       statusBombona: 'VAZIA',
       statusAprovacaoPontoColeta: 'PENDENTE',
       nomePontoColeta: `Ponto ${data.razaoSocial}`,
+      longitude: String(data.longitude),
+      latitude: String(data.latitude),
     };
 
     await this.pontoColetaRepository.create(pontoColetaData);

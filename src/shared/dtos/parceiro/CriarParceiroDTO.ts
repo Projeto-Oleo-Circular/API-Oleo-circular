@@ -262,6 +262,22 @@ export const CriarParceiroDTOSchema = z
       .openapi({
         example: true,
       }),
+      latitude: z
+  .string()
+  .trim()
+  .optional()
+  .transform((val) => (val ? Number(val) : null)) // converte para número se preenchido
+  .openapi({
+    example: "-23.550520", // São Paulo
+  }),
+longitude: z
+  .string()
+  .trim()
+  .optional()
+  .transform((val) => (val ? Number(val) : null))
+  .openapi({
+    example: "-46.633308",
+  }),
   })
   .superRefine((data, ctx) => {
     if (data.senha !== data.confirmarSenha) {

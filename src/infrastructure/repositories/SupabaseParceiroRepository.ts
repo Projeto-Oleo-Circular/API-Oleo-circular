@@ -21,7 +21,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .insert({
         nome: nomeFormatado,
         tipo: 'OUTRO',
-        ativo: true, 
+        ativo: true,
       })
       .select('id')
       .single();
@@ -53,7 +53,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
         telefone: data.telefone,
         responsavel_legal: data.responsavelLegal,
         aceite_marketing: data.aceiteMarketing,
-        parceiro_indicador_id: parceiroIndicadorIdFinal, // 🟢 Sempre salvo como ID válido!
+        parceiro_indicador_id: parceiroIndicadorIdFinal,
         como_conheceu: data.comoConheceu ?? null,
         observacao: data.observacao ?? null,
         status_aprovacao_parceiro: data.statusAprovacaoParceiro || 'PENDENTE',
@@ -74,7 +74,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .eq('email', email)
       .maybeSingle();
 
-    if (error) throw new Error(`Erro ao buscar parceiro: ${error.message}`);
+    if (error) throw new Error(`Erro ao buscar parceiro por email: ${error.message}`);
 
     return data ? this.mapToEntity(data) : null;
   }
@@ -86,7 +86,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .eq('id', id)
       .maybeSingle();
 
-    if (error) throw new Error(`Erro ao buscar parceiro: ${error.message}`);
+    if (error) throw new Error(`Erro ao buscar parceiro por ID: ${error.message}`);
 
     return data ? this.mapToEntity(data) : null;
   }
@@ -98,7 +98,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .eq('documento', documento)
       .maybeSingle();
 
-    if (error) throw new Error(`Erro ao buscar parceiro: ${error.message}`);
+    if (error) throw new Error(`Erro ao buscar parceiro por documento: ${error.message}`);
 
     return data ? this.mapToEntity(data) : null;
   }
@@ -116,6 +116,8 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
     if (data.tipoParceiro !== undefined) updateData.tipo_parceiro = data.tipoParceiro;
     if (data.comoConheceu !== undefined) updateData.como_conheceu = data.comoConheceu;
     if (data.observacao !== undefined) updateData.observacao = data.observacao;
+    if (data.expectativaGeracao !== undefined) updateData.expectativa_geracao = data.expectativaGeracao;
+    if (data.tipoPorte !== undefined) updateData.tipo_porte = data.tipoPorte;
 
     const { data: result, error } = await supabase
       .from('parceiros')
@@ -127,6 +129,15 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
     if (error) throw new Error(`Erro ao atualizar parceiro: ${error.message}`);
 
     return this.mapToEntity(result);
+  }
+
+  async delete(id: number): Promise<void> {
+    const { error } = await supabase
+      .from('parceiros')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw new Error(`Erro ao excluir parceiro: ${error.message}`);
   }
 
   async updateStatusComObservacao(
@@ -160,7 +171,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .select('*')
       .eq('status_aprovacao_parceiro', status);
 
-    if (error) throw new Error(`Erro ao buscar parceiros: ${error.message}`);
+    if (error) throw new Error(`Erro ao buscar parceiros por status: ${error.message}`);
 
     return data ? data.map(this.mapToEntity) : [];
   }
@@ -171,7 +182,7 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       .select('*')
       .order('criado_em', { ascending: false });
 
-    if (error) throw new Error(`Erro ao buscar parceiros: ${error.message}`);
+    if (error) throw new Error(`Erro ao buscar todos os parceiros: ${error.message}`);
 
     return data ? data.map(this.mapToEntity) : [];
   }
@@ -206,7 +217,10 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
       comoConheceu: data.como_conheceu,
       observacao: data.observacao,
       statusAprovacaoParceiro: data.status_aprovacao_parceiro,
+      expectativaGeracao: data.expectativa_geracao ?? null,
+      tipoPorte: data.tipo_porte ?? null,
       criadoEm: data.criado_em,
+      updatedEm: data.updated_at,
     } as Parceiro;
   }
 }

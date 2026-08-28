@@ -3,8 +3,8 @@ export interface Admin {
   nome: string;
   email: string;
   senhaHash: string;
-  licenca: string;
-  nivelAcesso: 'master' | 'gerente';
+  nivelAcesso: 'admin';
   criadoEm: Date;
   ultimoAcesso: Date | null;
+  atulizadoEm: Date;
 }

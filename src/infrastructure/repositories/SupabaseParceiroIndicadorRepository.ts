@@ -1,6 +1,7 @@
 import { ParceiroIndicador } from '../../domain/entities/ParceiroIndicador';
 import { supabase } from '../../shared/config/supabase';
 
+// Interface que define o formato da linha no banco
 interface ParceiroIndicadorRow {
   id: number;
   nome: string;
@@ -12,29 +13,139 @@ interface ParceiroIndicadorRow {
   ativo: boolean;
   criado_em: string;
 }
-export class SupabaseParceiroIndicadorRepository {
-async findAllAtivos(): Promise<ParceiroIndicador[]> {
-  const { data, error } = await supabase
-    .from('parceiros_indicadores')
-    .select('*')
-    .eq('ativo', true)
-    .order('nome', { ascending: true });
 
-  if (error) {
-    throw new Error(`Erro ao buscar parceiros ativos: ${error.message}`);
+// Interface do repositório (opcional, mas boa prática)
+export interface IParceiroIndicadorRepository {
+  findById(id: number): Promise<ParceiroIndicador | null>;
+  findAllAtivos(): Promise<ParceiroIndicador[]>;
+  findAll(): Promise<ParceiroIndicador[]>;
+  create(data: Omit<ParceiroIndicador, 'id' | 'criadoEm'>): Promise<ParceiroIndicador>;
+  update(id: number, data: Partial<ParceiroIndicador>): Promise<ParceiroIndicador>;
+  delete(id: number): Promise<void>;
+}
+
+export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRepository {
+  private readonly table = 'parceiros_indicadores';
+
+  // Mapeia uma linha do banco para a entidade de domínio
+  private mapToEntity(row: ParceiroIndicadorRow): ParceiroIndicador {
+    return {
+      id: row.id,
+      nome: row.nome,
+      tipo: row.tipo,
+      cnpj: row.cnpj,
+      email: row.email,
+      telefone: row.telefone,
+      site: row.site,
+      ativo: row.ativo,
+      criadoEm: new Date(row.criado_em),
+    };
   }
 
-  const rows = (data ?? []) as ParceiroIndicadorRow[];
+  // Busca por ID
+  async findById(id: number): Promise<ParceiroIndicador | null> {
+    const { data, error } = await supabase
+      .from(this.table)
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-  return rows.map((row) => ({
-    id: row.id,
-    nome: row.nome,
-    tipo: row.tipo,
-    cnpj: row.cnpj,
-    email: row.email,
-    telefone: row.telefone,
-    site: row.site,
-    ativo: row.ativo,
-    criadoEm: new Date(row.criado_em),
-  }));
-}}
+    if (error) {
+      throw new Error(`Erro ao buscar indicador por ID: ${error.message}`);
+    }
+
+    return data ? this.mapToEntity(data as ParceiroIndicadorRow) : null;
+  }
+
+  // Busca todos os indicadores ativos (ordenados por nome)
+  async findAllAtivos(): Promise<ParceiroIndicador[]> {
+    const { data, error } = await supabase
+      .from(this.table)
+      .select('*')
+      .eq('ativo', true)
+      .order('nome', { ascending: true });
+
+    if (error) {
+      throw new Error(`Erro ao buscar indicadores ativos: ${error.message}`);
+    }
+
+    const rows = (data ?? []) as ParceiroIndicadorRow[];
+    return rows.map((row) => this.mapToEntity(row));
+  }
+
+  // Busca todos os indicadores (sem filtro)
+  async findAll(): Promise<ParceiroIndicador[]> {
+    const { data, error } = await supabase
+      .from(this.table)
+      .select('*')
+      .order('nome', { ascending: true });
+
+    if (error) {
+      throw new Error(`Erro ao buscar todos os indicadores: ${error.message}`);
+    }
+
+    const rows = (data ?? []) as ParceiroIndicadorRow[];
+    return rows.map((row) => this.mapToEntity(row));
+  }
+
+  // Cria um novo indicador
+  async create(data: Omit<ParceiroIndicador, 'id' | 'criadoEm'>): Promise<ParceiroIndicador> {
+    const { data: inserted, error } = await supabase
+      .from(this.table)
+      .insert({
+        nome: data.nome,
+        tipo: data.tipo,
+        cnpj: data.cnpj,
+        email: data.email,
+        telefone: data.telefone,
+        site: data.site,
+        ativo: data.ativo,
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao criar indicador: ${error.message}`);
+    }
+
+    return this.mapToEntity(inserted as ParceiroIndicadorRow);
+  }
+
+  // Atualiza um indicador existente
+  async update(id: number, data: Partial<ParceiroIndicador>): Promise<ParceiroIndicador> {
+    // Constrói o objeto de atualização apenas com os campos fornecidos
+    const updateData: any = {};
+    if (data.nome !== undefined) updateData.nome = data.nome;
+    if (data.tipo !== undefined) updateData.tipo = data.tipo;
+    if (data.cnpj !== undefined) updateData.cnpj = data.cnpj;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.telefone !== undefined) updateData.telefone = data.telefone;
+    if (data.site !== undefined) updateData.site = data.site;
+    if (data.ativo !== undefined) updateData.ativo = data.ativo;
+
+    const { data: updated, error } = await supabase
+      .from(this.table)
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar indicador: ${error.message}`);
+    }
+
+    return this.mapToEntity(updated as ParceiroIndicadorRow);
+  }
+
+  // Exclui um indicador
+  async delete(id: number): Promise<void> {
+    const { error } = await supabase
+      .from(this.table)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Erro ao excluir indicador: ${error.message}`);
+    }
+  }
+}

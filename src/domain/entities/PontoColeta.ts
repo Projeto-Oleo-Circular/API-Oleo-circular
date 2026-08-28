@@ -1,6 +1,6 @@
 // domain/entities/PontoColeta.ts
 
-export type CategoriaPontoColeta = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export type CategoriaPontoColeta = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export const CategoriaPontoColetaMap: Record<CategoriaPontoColeta, string> = {
   1: 'Restaurante industrial',
@@ -10,6 +10,7 @@ export const CategoriaPontoColetaMap: Record<CategoriaPontoColeta, string> = {
   5: 'Hotel / Pousada',
   6: 'Empresa / Refeitório corporativo',
   7: 'Condomínio / Casa residencial',
+  8: 'Doador Avulso'
 };
 
 export const CategoriaPontoColetaOptions = Object.entries(CategoriaPontoColetaMap).map(
@@ -90,4 +91,6 @@ export interface PontoColeta {
   statusBombona?: string;
   statusAprovacaoPontoColeta?: string;
   atualizadoEm?: Date;
+  longitude: string;
+  latitude: string;
 }

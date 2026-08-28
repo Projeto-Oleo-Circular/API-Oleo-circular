@@ -5,8 +5,7 @@ import { SupabaseAdminRepository } from '../../../infrastructure/repositories/Su
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
 import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
-
-
+import { SupabaseParceiroIndicadorRepository } from '../../../infrastructure/repositories/SupabaseParceiroIndicadorRepository';
 
 // Use Cases
 import { LoginAdminUseCase } from '../../../domain/use-cases/admin/LoginAdminUseCase';
@@ -17,6 +16,9 @@ import { ListarTodosParceirosUseCase } from '../../../domain/use-cases/admin/Lis
 import { ListarTodosPontosUseCase } from '../../../domain/use-cases/admin/ListarTodosPontosUseCase';
 import { AtualizarStatusSolicitacaoUseCase } from '../../../domain/use-cases/solicitacao/AtualizarStatusSolicitacaoUseCase';
 import { ListarTodasSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarTodasSolicitacoesColetaUseCase';
+import { GetAlogadoUseCase } from '../../../domain/use-cases/admin/getUserAUseCase';
+import { AdminManageUseCase } from '../../../domain/use-cases/admin/AdminManageUseCase';
+import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 
 // Controllers
 import { AdminController } from '../controllers/AdminController';
@@ -26,23 +28,51 @@ import { AuthMiddleware, loginLimiter } from '../middlewares/AuthMiddleware';
 
 const router = Router();
 
-// Instanciação dos repositórios
+// ===================== INSTANCIAR REPOSITÓRIOS =====================
 const adminRepository = new SupabaseAdminRepository();
 const parceiroRepository = new SupabaseParceiroRepository();
 const pontoColetaRepository = new SupabasePontoColetaRepository();
 const solicitacaoRepository = new SupabaseSolicitacaoRepository();
+const indicadorRepository = new SupabaseParceiroIndicadorRepository();
 
-// Instanciação dos Use Cases
+// ===================== INSTANCIAR USE CASES =====================
 const loginAdminUseCase = new LoginAdminUseCase(adminRepository);
-const atualizarStatusParceiroUseCase = new AtualizarStatusParceiroUseCase(parceiroRepository, pontoColetaRepository);
-const atualizarStatusPontoColetaUseCase = new AtualizarStatusPontoColetaUseCase(pontoColetaRepository, parceiroRepository);
+const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
+
+const atualizarStatusParceiroUseCase = new AtualizarStatusParceiroUseCase(
+  parceiroRepository,
+  pontoColetaRepository
+);
+const atualizarStatusPontoColetaUseCase = new AtualizarStatusPontoColetaUseCase(
+  pontoColetaRepository,
+  parceiroRepository
+);
 const listarParceirosPendentesUseCase = new ListarParceirosPendentesUseCase(parceiroRepository);
 const listarTodosParceirosUseCase = new ListarTodosParceirosUseCase(parceiroRepository);
-const listarTodosPontosUseCase = new ListarTodosPontosUseCase(pontoColetaRepository, parceiroRepository);
-const atualizarStatusSolicitacaoUseCase = new AtualizarStatusSolicitacaoUseCase(solicitacaoRepository, pontoColetaRepository, parceiroRepository);
-const listarTodasSolicitacoesColetaUseCase = new ListarTodasSolicitacoesColetaUseCase(solicitacaoRepository, pontoColetaRepository, parceiroRepository);
+const listarTodosPontosUseCase = new ListarTodosPontosUseCase(
+  pontoColetaRepository,
+  parceiroRepository
+);
+const atualizarStatusSolicitacaoUseCase = new AtualizarStatusSolicitacaoUseCase(
+  solicitacaoRepository,
+  pontoColetaRepository,
+  parceiroRepository
+);
+const listarTodasSolicitacoesColetaUseCase = new ListarTodasSolicitacoesColetaUseCase(
+  solicitacaoRepository,
+  pontoColetaRepository,
+  parceiroRepository
+);
+const getUser = new GetAlogadoUseCase(adminRepository);
 
-// Instanciação dos Controllers
+// ===== NOVO USE CASE DE GESTÃO (CRUD) =====
+const adminManageUseCase = new AdminManageUseCase(
+  adminRepository,
+  parceiroRepository,
+  indicadorRepository
+);
+
+// ===================== INSTANCIAR CONTROLLER =====================
 const adminController = new AdminController(
   loginAdminUseCase,
   atualizarStatusParceiroUseCase,
@@ -52,14 +82,17 @@ const adminController = new AdminController(
   listarTodosPontosUseCase,
   atualizarStatusSolicitacaoUseCase,
   listarTodasSolicitacoesColetaUseCase,
+  getUser,
+  adminManageUseCase,
+    criarParceiroUseCase,
+
+
+  
 );
 
-/**
- * @swagger
- * tags:
- *   name: Admin
- *   description: Módulo de administração e aprovações
- */
+// =================================================================
+// ===================== ROTAS PÚBLICAS ============================
+// =================================================================
 
 /**
  * @swagger
@@ -102,7 +135,13 @@ const adminController = new AdminController(
  *       401:
  *         description: Credenciais inválidas
  */
-router.post('/login', loginLimiter, async (req, res) => adminController.login(req, res));
+router.post('/login', loginLimiter, (req, res) => adminController.login(req, res));
+
+// =================================================================
+// ===================== ROTAS AUTENTICADAS ========================
+// =================================================================
+
+router.use(AuthMiddleware.verify, AuthMiddleware.requireRole('admin'));
 
 /**
  * @swagger
@@ -121,26 +160,33 @@ router.post('/login', loginLimiter, async (req, res) => adminController.login(re
  *               type: object
  *               properties:
  *                 id:
- *                   type: string
+ *                   type: number
  *                 nome:
  *                   type: string
  *                 email:
  *                   type: string
  *                 nivelAcesso:
  *                   type: string
+ *                 ultimoAcesso:
+ *                   type: string
+ *                   format: date-time
  *       401:
  *         description: Não autenticado
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.get('/me', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.me(req, res));
+router.get('/me', (req, res) => adminController.me(req, res));
+
+// =================================================================
+// ===== PARCEIROS - APROVAÇÃO E LISTAGEM ==========================
+// =================================================================
 
 /**
  * @swagger
  * /admin/parceiros/pendentes:
  *   get:
  *     summary: Lista parceiros pendentes de aprovação
- *     tags: [Admin]
+ *     tags: [Admin - Parceiros]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -151,33 +197,20 @@ router.get('/me', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (r
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   razaoSocial:
- *                     type: string
- *                   email:
- *                     type: string
- *                   documento:
- *                     type: string
- *                   porte:
- *                     type: string
- *                   criadoEm:
- *                     type: string
+ *                 $ref: '#/components/schemas/Parceiro'
  *       401:
  *         description: Não autenticado
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.get('/parceiros/pendentes', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarPendentes(req, res));
+router.get('/parceiros/pendentes', (req, res) => adminController.listarPendentes(req, res));
 
 /**
  * @swagger
  * /admin/parceiros:
  *   get:
  *     summary: Lista todos os parceiros
- *     tags: [Admin]
+ *     tags: [Admin - Parceiros]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -188,31 +221,20 @@ router.get('/parceiros/pendentes', AuthMiddleware.verify, AuthMiddleware.require
  *             schema:
  *               type: array
  *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: string
- *                   razaoSocial:
- *                     type: string
- *                   email:
- *                     type: string
- *                   statusAprovacaoParceiro:
- *                     type: string
- *                   observacao:
- *                     type: string
+ *                 $ref: '#/components/schemas/Parceiro'
  *       401:
  *         description: Não autenticado
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.get('/parceiros', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarParceiros(req, res));
+router.get('/parceiros', (req, res) => adminController.listarParceiros(req, res));
 
 /**
  * @swagger
  * /admin/parceiros/{id}/status:
  *   patch:
  *     summary: Atualiza status e observação de um parceiro
- *     tags: [Admin]
+ *     tags: [Admin - Parceiros]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -237,17 +259,6 @@ router.get('/parceiros', AuthMiddleware.verify, AuthMiddleware.requireRole('admi
  *     responses:
  *       200:
  *         description: Parceiro atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 statusAprovacaoParceiro:
- *                   type: string
- *                 observacao:
- *                   type: string
  *       400:
  *         description: Dados inválidos ou parceiro não encontrado
  *       401:
@@ -255,14 +266,18 @@ router.get('/parceiros', AuthMiddleware.verify, AuthMiddleware.requireRole('admi
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.patch('/parceiros/:id/status', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarStatusParceiro(req, res));
+router.patch('/parceiros/:id/status', (req, res) => adminController.atualizarStatusParceiro(req, res));
+
+// =================================================================
+// ===== PONTOS DE COLETA ==========================================
+// =================================================================
 
 /**
  * @swagger
  * /admin/pontos:
  *   get:
  *     summary: Lista pontos de coleta com filtros e paginação
- *     tags: [Admin]
+ *     tags: [Admin - Pontos de Coleta]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -273,8 +288,7 @@ router.patch('/parceiros/:id/status', AuthMiddleware.verify, AuthMiddleware.requ
  *             - type: integer
  *               enum: [1, 2, 3, 4, 5, 6, 7]
  *             - type: string
- *               example: Escola / Universidade
- *         description: Filtra pela categoria do ponto de coleta. Aceita número ou nome traduzido.
+ *         description: Filtra pela categoria do ponto de coleta
  *       - in: query
  *         name: nomePonto
  *         schema:
@@ -316,14 +330,14 @@ router.patch('/parceiros/:id/status', AuthMiddleware.verify, AuthMiddleware.requ
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.get('/pontos', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarPontos(req, res));
+router.get('/pontos', (req, res) => adminController.listarPontos(req, res));
 
 /**
  * @swagger
  * /admin/pontos/{id}/status:
  *   patch:
  *     summary: Atualiza status e observação de um ponto de coleta
- *     tags: [Admin]
+ *     tags: [Admin - Pontos de Coleta]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -348,17 +362,6 @@ router.get('/pontos', AuthMiddleware.verify, AuthMiddleware.requireRole('admin')
  *     responses:
  *       200:
  *         description: Ponto atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: string
- *                 statusAprovacaoPontoColeta:
- *                   type: string
- *                 observacao:
- *                   type: string
  *       400:
  *         description: Dados inválidos ou ponto não encontrado
  *       401:
@@ -366,64 +369,18 @@ router.get('/pontos', AuthMiddleware.verify, AuthMiddleware.requireRole('admin')
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.patch('/pontos/:id/status', AuthMiddleware.verify, AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarStatusPonto(req, res));
+router.patch('/pontos/:id/status', (req, res) => adminController.atualizarStatusPonto(req, res));
 
-/**
- * @swagger
- * /admin/solicitacoes-coleta/{id}/status:
- *   patch:
- *     summary: Atualiza o status de uma solicitação de coleta
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID da solicitação de coleta
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [AGUARDANDO, AGENDADA, EM_ROTA, CONCLUIDA]
- *               dataAgendamento:
- *                 type: string
- *                 format: date-time
- *               volumeColetado:
- *                 type: number
- *               observacoes:
- *                 type: string
- *     responses:
- *       200:
- *         description: Solicitação atualizada com sucesso
- *       400:
- *         description: Erro de validação ou solicitação não encontrada
- *       401:
- *         description: Não autenticado
- *       403:
- *         description: Acesso negado (não é admin)
- */
-router.patch(
-  '/solicitacoes-coleta/:id/status',
-  AuthMiddleware.verify,
-  AuthMiddleware.requireRole('admin'),
-  (req, res) => adminController.atualizarStatus(req, res)
-);
+// =================================================================
+// ===== SOLICITAÇÕES DE COLETA ====================================
+// =================================================================
+
 /**
  * @swagger
  * /admin/solicitacoes-coleta:
  *   get:
  *     summary: Lista todas as solicitações de coleta com filtros
- *     tags: [Admin]
+ *     tags: [Admin - Solicitações]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -484,10 +441,400 @@ router.patch(
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.get(
-  '/solicitacoes-coleta',
-  AuthMiddleware.verify,
-  AuthMiddleware.requireRole('admin'),
-  (req, res) => adminController.listarSolicitacoes(req, res)
-);
+router.get('/solicitacoes-coleta', (req, res) => adminController.listarSolicitacoes(req, res));
+
+/**
+ * @swagger
+ * /admin/solicitacoes-coleta/{id}/status:
+ *   patch:
+ *     summary: Atualiza o status de uma solicitação de coleta
+ *     tags: [Admin - Solicitações]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID da solicitação de coleta
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [AGUARDANDO, AGENDADA, EM_ROTA, CONCLUIDA]
+ *               dataAgendamento:
+ *                 type: string
+ *                 format: date-time
+ *               volumeColetado:
+ *                 type: number
+ *               observacoes:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Solicitação atualizada com sucesso
+ *       400:
+ *         description: Erro de validação ou solicitação não encontrada
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.patch('/solicitacoes-coleta/:id/status', (req, res) => adminController.atualizarStatus(req, res));
+
+// =================================================================
+// ===== CRUD - ADMINISTRADORES (apenas admin) ====================
+// =================================================================
+
+/**
+ * @swagger
+ * /admin/admins:
+ *   post:
+ *     summary: Cria um novo administrador (apenas admin)
+ *     tags: [Admin - Gestão de Admins]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - email
+ *               - senha
+ *               - nivelAcesso
+ *             properties:
+ *               nome:
+ *                 type: string
+ *                 example: "João Silva"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: "joao@admin.com"
+ *               senha:
+ *                 type: string
+ *                 format: password
+ *                 example: "123456"
+ *               nivelAcesso:
+ *                 type: string
+ *                 enum: [admin, gerente]
+ *                 example: "gerente"
+ *     responses:
+ *       201:
+ *         description: Administrador criado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Admin'
+ *       400:
+ *         description: Dados inválidos ou email já existe
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.post('/admins', AuthMiddleware.requireRole('admin'), (req, res) => adminController.criarAdmin(req, res));
+
+
+/**
+ * @swagger
+ * /admin/parceiros:
+ *   post:
+ *     summary: Cria um novo parceiro (admin ou gerente)
+ *     tags: [Admin - Gestão de Parceiros]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - senha
+ *               - documento
+ *               - razaoSocial
+ *               - nome
+ *               - tipoParceiro
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               senha:
+ *                 type: string
+ *                 format: password
+ *               documento:
+ *                 type: string
+ *               razaoSocial:
+ *                 type: string
+ *               nome:
+ *                 type: string
+ *               telefone:
+ *                 type: string
+ *               tipoParceiro:
+ *                 type: string
+ *                 enum: [INSTITUCIONAL, COMUNITARIO, SOLIDARIO]
+ *               statusAprovacaoParceiro:
+ *                 type: string
+ *                 enum: [PENDENTE, APROVADO, REJEITADO]
+ *                 default: PENDENTE
+ *               parceiroIndicadorId:
+ *                 type: integer
+ *               redesSociais:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               responsavelLegal:
+ *                 type: string
+ *               aceiteMarketing:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Parceiro criado com sucesso
+ *       400:
+ *         description: Dados inválidos ou email/documento já existente
+ */
+router.post('/parceiros', AuthMiddleware.requireRole('admin'), (req, res) => adminController.criarParceiro(req, res));
+
+/**
+ * @swagger
+ * /admin/parceiros/{id}:
+ *   put:
+ *     summary: Atualiza um parceiro (admin ou gerente)
+ *     tags: [Admin - Gestão de Parceiros]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do parceiro
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               razaoSocial:
+ *                 type: string
+ *               nome:
+ *                 type: string
+ *               telefone:
+ *                 type: string
+ *               statusAprovacaoParceiro:
+ *                 type: string
+ *                 enum: [PENDENTE, APROVADO, REJEITADO]
+ *               parceiroIndicadorId:
+ *                 type: integer
+ *               redesSociais:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               responsavelLegal:
+ *                 type: string
+ *               aceiteMarketing:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Parceiro atualizado com sucesso
+ *       404:
+ *         description: Parceiro não encontrado
+ */
+router.put('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarParceiro(req, res));
+
+/**
+ * @swagger
+ * /admin/parceiros/{id}:
+ *   delete:
+ *     summary: Exclui um parceiro (apenas admin)
+ *     tags: [Admin - Gestão de Parceiros]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do parceiro
+ *     responses:
+ *       204:
+ *         description: Parceiro excluído com sucesso
+ *       403:
+ *         description: Acesso negado (não é admin)
+ *       404:
+ *         description: Parceiro não encontrado
+ */
+router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.excluirParceiro(req, res));
+
+// =================================================================
+// ===== CRUD - PARCEIROS INDICADORES ==============================
+// =================================================================
+
+/**
+ * @swagger
+ * /admin/indicadores:
+ *   post:
+ *     summary: Cria um novo parceiro indicador (admin ou gerente)
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nome
+ *               - tipo
+ *               - cnpj
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               tipo:
+ *                 type: string
+ *                 enum: [ASSOCIACAO, COOPERATIVA, ONG]
+ *               cnpj:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               telefone:
+ *                 type: string
+ *               site:
+ *                 type: string
+ *               ativo:
+ *                 type: boolean
+ *                 default: true
+ *     responses:
+ *       201:
+ *         description: Indicador criado com sucesso
+ *       400:
+ *         description: Dados inválidos ou CNPJ já existe
+ */
+router.post('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => adminController.criarIndicador(req, res));
+
+/**
+ * @swagger
+ * /admin/indicadores:
+ *   get:
+ *     summary: Lista todos os parceiros indicadores (admin ou gerente)
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de indicadores
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ParceiroIndicador'
+ */
+router.get('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarIndicadoresAtivos(req, res));
+
+/**
+ * @swagger
+ * /admin/indicadores/ativos:
+ *   get:
+ *     summary: Lista apenas os indicadores ativos (admin ou gerente)
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de indicadores ativos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ParceiroIndicador'
+ */
+router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarIndicadoresAtivos(req, res));
+
+/**
+ * @swagger
+ * /admin/indicadores/{id}:
+ *   put:
+ *     summary: Atualiza um parceiro indicador (admin ou gerente)
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do indicador
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               tipo:
+ *                 type: string
+ *                 enum: [ASSOCIACAO, COOPERATIVA, ONG]
+ *               cnpj:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               telefone:
+ *                 type: string
+ *               site:
+ *                 type: string
+ *               ativo:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Indicador atualizado com sucesso
+ *       404:
+ *         description: Indicador não encontrado
+ */
+router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarIndicador(req, res));
+
+/**
+ * @swagger
+ * /admin/indicadores/{id}:
+ *   delete:
+ *     summary: Exclui um parceiro indicador (apenas admin)
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do indicador
+ *     responses:
+ *       204:
+ *         description: Indicador excluído com sucesso
+ *       403:
+ *         description: Acesso negado (não é admin)
+ *       404:
+ *         description: Indicador não encontrado
+ */
+router.delete('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.excluirIndicador(req, res));
+
 export default router;
