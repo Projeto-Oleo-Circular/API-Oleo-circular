@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
 import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
 import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
+import { SupabasePasswordResetTokenRepository } from '../../../infrastructure/repositories/SupabasePasswordResetTokenRepository'; // <- NOVO: Repositório de tokens
 
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
@@ -10,13 +11,12 @@ import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/Get
 import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
 import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
 import { DeletePontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/DeletePontoColetaUseCase';
-import { ParceiroController } from '../controllers/ParceiroController';
-
-import {
-  AuthMiddleware,
-  loginLimiter,
-} from '../middlewares/AuthMiddleware';
 import { AtualizarParceiroUseCase } from '../../../domain/use-cases/parceiro/AtualizarParceiroUseCase';
+import { SolicitarRedefinicaoSenhaUseCase } from '../../../domain/use-cases/auth/SolicitarRedefinicaoSenhaUseCase'; // <- NOVO
+import { RedefinirSenhaUseCase } from '../../../domain/use-cases/auth/RedefinirSenhaUseCase'; // <- NOVO
+
+import { ParceiroController } from '../controllers/ParceiroController';
+import { AuthMiddleware, loginLimiter } from '../middlewares/AuthMiddleware';
 
 const router = Router();
 
@@ -27,14 +27,17 @@ const router = Router();
 const parceiroRepository = new SupabaseParceiroRepository();
 const pontoColetaRepository = new SupabasePontoColetaRepository();
 const solicitacaoRepository = new SupabaseSolicitacaoRepository();
+const passwordResetTokenRepository = new SupabasePasswordResetTokenRepository()
 
 const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
 const loginParceiroUseCase = new LoginParceiroUseCase(parceiroRepository);
 const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(parceiroRepository, pontoColetaRepository);
 const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(parceiroRepository);
 const listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(solicitacaoRepository, pontoColetaRepository);
-const deletePontoColetaUseCase = new DeletePontoColetaUseCase(pontoColetaRepository)
+const deletePontoColetaUseCase = new DeletePontoColetaUseCase(pontoColetaRepository);
 const atualizarParceiroUseCase = new AtualizarParceiroUseCase(parceiroRepository);
+const solicitarRedefinicaoSenhaUseCase = new SolicitarRedefinicaoSenhaUseCase(parceiroRepository, passwordResetTokenRepository); 
+const redefinirSenhaUseCase = new RedefinirSenhaUseCase(parceiroRepository, passwordResetTokenRepository); 
 
 const parceiroController = new ParceiroController(
   criarParceiroUseCase,
@@ -43,9 +46,10 @@ const parceiroController = new ParceiroController(
   verificarDisponibilidadeUseCase,
   listarSolicitacoesColetaUseCase,
   deletePontoColetaUseCase,
-  atualizarParceiroUseCase
+  atualizarParceiroUseCase,
+  solicitarRedefinicaoSenhaUseCase, 
+  redefinirSenhaUseCase           
 );
-
 /**
  * @openapi
  * tags:
@@ -305,5 +309,70 @@ router.put(
   AuthMiddleware.requireRole('parceiro'),
   parceiroController.atualizarPerfil
 );
+// ======================
+// ROTAS DE AUTENTICAÇÃO E SENHA
+// ======================
 
+/**
+ * @openapi
+ * /parceiros/esqueci-senha:
+ *   post:
+ *     tags:
+ *       - Parceiro
+ *     summary: Solicita o envio de e-mail para redefinição de senha
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: parceiro@email.com
+ *     responses:
+ *       200:
+ *         description: E-mail de redefinição enviado com sucesso.
+ *       400:
+ *         description: Dados inválidos.
+ */
+router.post(
+  '/esqueci-senha',
+  parceiroController.solicitarRedefinicaoSenha
+);
+
+/**
+ * @openapi
+ * /parceiros/redefinir-senha:
+ *   post:
+ *     tags:
+ *       - Parceiro
+ *     summary: Redefine a senha utilizando o token enviado por e-mail
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - novaSenha
+ *             properties:
+ *               token:
+ *                 type: string
+ *               novaSenha:
+ *                 type: string
+ *                 example: "NovaSenha123!"
+ *     responses:
+ *       200:
+ *         description: Senha redefinida com sucesso.
+ *       400:
+ *         description: Token inválido, expirado ou dados incorretos.
+ */
+router.post(
+  '/redefinir-senha',
+  parceiroController.redefinirSenha
+);
 export default router;
