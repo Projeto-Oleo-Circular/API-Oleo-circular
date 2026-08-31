@@ -264,4 +264,8 @@ router.put(
  */
 router.get('/:id', (req, res) => pontoColetaController.findById(req, res));
 
+
+
+router.post('/esqueci-senha', parceiroController.solicitarRedefinicaoSenha);
+router.post('/redefinir-senha', parceiroController.redefinirSenha);
 export default router;

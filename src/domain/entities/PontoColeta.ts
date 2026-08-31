@@ -3,13 +3,13 @@
 export type CategoriaPontoColeta = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export const CategoriaPontoColetaMap: Record<CategoriaPontoColeta, string> = {
-  1: 'Restaurante industrial',
-  2: 'Restaurante e lanchonete',
+  1: 'Cozinha Industrial',
+  2: 'Empresa / Industria',
   3: 'Escola / Universidade',
-  4: 'Hospital / Unidade de saúde',
-  5: 'Hotel / Pousada',
-  6: 'Empresa / Refeitório corporativo',
-  7: 'Condomínio / Casa residencial',
+  4: 'Hotel / Pousada',
+  5: 'Restaurante / Bar',
+  6: 'Condomínio',
+  7: 'Feira Livre / Eventos',
   8: 'Doador Avulso'
 };
 

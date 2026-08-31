@@ -9,6 +9,10 @@ import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parce
 import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
 import { DeletePontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/DeletePontoColetaUseCase';
 import { AtualizarParceiroUseCase} from '../../../domain/use-cases/parceiro/AtualizarParceiroUseCase';
+import { SolicitarRedefinicaoSenhaUseCase } from '../../../domain/use-cases/auth/SolicitarRedefinicaoSenhaUseCase';
+import { RedefinirSenhaUseCase } from '../../../domain/use-cases/auth/RedefinirSenhaUseCase';
+import { SolicitarRedefinicaoSenhaDTOSchema } from '../../../shared/dtos/auth/SolicitarRedefinicaoSenhaDTO';
+import { RedefinirSenhaDTOSchema } from '../../../shared/dtos/auth/RedefinirSenhaDTO';
 export class ParceiroController {
   constructor(
     private readonly criarParceiroUseCase: CriarParceiroUseCase,
@@ -258,5 +262,32 @@ async atualizarPerfil(req: Request, res: Response): Promise<void> {
     }
   }
 
+}
+async solicitarRedefinicaoSenha(req: Request, res: Response): Promise<void> {
+  try {
+    const dados = SolicitarRedefinicaoSenhaDTOSchema.parse(req.body);
+    await this.solicitarRedefinicaoSenhaUseCase.execute(dados);
+    res.status(200).json({ message: 'E-mail de redefinição enviado.' });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ errors: error.errors });
+      return;
+    }
+    res.status(400).json({ message: error instanceof Error ? error.message : 'Erro inesperado' });
+  }
+}
+
+async redefinirSenha(req: Request, res: Response): Promise<void> {
+  try {
+    const dados = RedefinirSenhaDTOSchema.parse(req.body);
+    await this.redefinirSenhaUseCase.execute(dados);
+    res.status(200).json({ message: 'Senha redefinida com sucesso.' });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ errors: error.errors });
+      return;
+    }
+    res.status(400).json({ message: error instanceof Error ? error.message : 'Erro inesperado' });
+  }
 }
 }
