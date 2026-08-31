@@ -20,6 +20,34 @@ interface EmailTemplateResult {
   html: string;
 }
 
+function formatarDataEmail(isoData?: string): string {
+  if (!isoData) return "";
+  
+  const data = new Date(isoData);
+  if (isNaN(data.getTime())) return isoData; 
+
+  const dataFormatada = data.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
+  const horaInicio = data.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+    hour12: false,
+  });
+
+  const [h] = horaInicio.split(":").map(Number);
+  const horaFimNum = h + 1;
+  const horaFim = `${String(horaFimNum).padStart(2, '0')}:00`;
+
+  let turno = "";
+  if (h >= 8 && h < 12) turno = "Manhã";
+  else if (h >= 13 && h < 17) turno = "Tarde";
+  else if (h >= 18 && h < 22) turno = "Noite";
+  else turno = "Comercial";
+
+  return `${dataFormatada} • ${turno} (${horaInicio} - ${horaFim})`;
+}
+
 export function renderColetaEmail({
   nome,
   endereco,
@@ -78,7 +106,7 @@ export function renderColetaEmail({
 
             ${
               dataColeta
-                ? `<br/><br/><strong>Data prevista</strong><br/>${dataColeta}`
+                ? `<br/><br/><strong>Data e Horário Previsto</strong><br/>${formatarDataEmail(dataColeta)}`
                 : ''
             }
           `,

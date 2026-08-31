@@ -1,11 +1,10 @@
-// infrastructure/repositories/SupabasePasswordResetTokenRepository.ts
-import { supabase } from '../../shared/config/supabase';
+import { supabaseAdmin } from '../../shared/config/supabase'; 
 import { IPasswordResetTokenRepository } from '../../domain/repositories/IPasswordResetTokenRepository';
 import { PasswordResetToken } from '../../domain/entities/PasswordResetToken';
 
 export class SupabasePasswordResetTokenRepository implements IPasswordResetTokenRepository {
   async create(data: Omit<PasswordResetToken, 'id' | 'createdAt'>): Promise<PasswordResetToken> {
-    const { data: result, error } = await supabase
+    const { data: result, error } = await supabaseAdmin 
       .from('password_reset_tokens')
       .insert({
         email: data.email,
@@ -21,7 +20,7 @@ export class SupabasePasswordResetTokenRepository implements IPasswordResetToken
   }
 
   async findByToken(token: string): Promise<PasswordResetToken | null> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin 
       .from('password_reset_tokens')
       .select('*')
       .eq('token', token)
@@ -32,7 +31,7 @@ export class SupabasePasswordResetTokenRepository implements IPasswordResetToken
   }
 
   async markAsUsed(id: number): Promise<void> {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin 
       .from('password_reset_tokens')
       .update({ used: true })
       .eq('id', id);
@@ -41,8 +40,7 @@ export class SupabasePasswordResetTokenRepository implements IPasswordResetToken
   }
 
   async deleteByEmail(email: string): Promise<void> {
-    // opcional: deletar tokens antigos para evitar acúmulo
-    const { error } = await supabase
+    const { error } = await supabaseAdmin 
       .from('password_reset_tokens')
       .delete()
       .eq('email', email);

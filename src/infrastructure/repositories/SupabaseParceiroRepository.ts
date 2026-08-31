@@ -1,6 +1,6 @@
 import { Parceiro } from '../../domain/entities/Parceiro';
 import { IParceiroRepository } from '../../domain/repositories/IParceiroRepository';
-import { supabase } from '../../shared/config/supabase';
+import { supabase, supabaseAdmin } from '../../shared/config/supabase';
 
 export class SupabaseParceiroRepository implements IParceiroRepository {
   private async obterOuCriarParceiroIndicador(nomeOutroParceiro: string): Promise<number> {
@@ -118,17 +118,21 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
     if (data.observacao !== undefined) updateData.observacao = data.observacao;
     if (data.expectativaGeracao !== undefined) updateData.expectativa_geracao = data.expectativaGeracao;
     if (data.tipoPorte !== undefined) updateData.tipo_porte = data.tipoPorte;
+    if (data.senhaHash !== undefined) updateData.senha_hash = data.senhaHash;
 
-    const { data: result, error } = await supabase
+    const { data: result, error } = await supabaseAdmin 
       .from('parceiros')
       .update(updateData)
       .eq('id', id)
-      .select()
-      .single();
+      .select(); 
 
     if (error) throw new Error(`Erro ao atualizar parceiro: ${error.message}`);
 
-    return this.mapToEntity(result);
+    if (!result || result.length === 0) {
+      throw new Error('Parceiro não encontrado para atualização.');
+    }
+
+    return this.mapToEntity(result[0]);
   }
 
   async delete(id: number): Promise<void> {
@@ -198,7 +202,21 @@ export class SupabaseParceiroRepository implements IParceiroRepository {
 
     return data || [];
   }
+async updatePasswordByEmail(email: string, senhaHash: string): Promise<void> {
+    const { data, error } = await supabaseAdmin
+      .from('parceiros')
+      .update({ senha_hash: senhaHash }) 
+      .eq('email', email)
+      .select();
 
+    if (error) {
+      throw new Error(`Erro ao atualizar senha: ${error.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error('Parceiro não encontrado para este e-mail.');
+    }
+  }
   private mapToEntity(data: any): Parceiro {
     return {
       id: data.id,

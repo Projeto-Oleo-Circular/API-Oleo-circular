@@ -64,7 +64,6 @@ export class CriarSolicitacaoColetaUseCase {
       observacoes: observacoes ?? null,
       status: 'AGUARDANDO',
       volumeColetado: null,
-      dataAgendamento: null,
       dataConclusao: null,
     });
 

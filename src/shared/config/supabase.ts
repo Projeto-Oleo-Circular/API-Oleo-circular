@@ -5,20 +5,27 @@ dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabaseServiceRoleKey = 
+  process.env.SUPABASE_SERVICE_ROLE || 
+  process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('ERRO CRÍTICO SUPABASE: Variáveis de ambiente não foram carregadas!');
-  console.error(`SUPABASE_URL: ${supabaseUrl ? 'OK' : 'AUSENTE'}`);
-  console.error(`SUPABASE_ANON_KEY: ${supabaseAnonKey ? 'OK' : 'AUSENTE'}`);
+  throw new Error('ERRO CRÍTICO SUPABASE: URL ou ANON_KEY não foram carregadas!');
 }
 
-export const supabase = createClient(
-  supabaseUrl || '', 
-  supabaseAnonKey || ''
-);
+if (!supabaseServiceRoleKey) {
+  throw new Error('ERRO CRÍTICO: A variável SUPABASE_SERVICE_ROLE não foi encontrada no arquivo .env!');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const supabaseAdmin = createClient(
-  supabaseUrl || '', 
-  supabaseServiceRoleKey || supabaseAnonKey || ''
+  supabaseUrl, 
+  supabaseServiceRoleKey,
+  {
+    auth: {
+      persistSession: false,
+    },
+  }
 );

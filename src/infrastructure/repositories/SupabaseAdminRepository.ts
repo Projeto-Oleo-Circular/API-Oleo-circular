@@ -89,7 +89,6 @@ async create(adminData: Omit<Admin, 'id' | 'criadoEm' | 'ultimoAcesso'>): Promis
       if (data.senhaHash !== undefined) updateData.senha_hash = data.senhaHash;
       if (data.nivelAcesso !== undefined) updateData.nivel_acesso = data.nivelAcesso;
 
-      // Atualiza o campo updated com o timestamp atual
       updateData.updated = new Date().toISOString();
 
       const { data: result, error } = await supabase
@@ -121,7 +120,6 @@ async create(adminData: Omit<Admin, 'id' | 'criadoEm' | 'ultimoAcesso'>): Promis
     }
   }
 
-  // ==================== Métodos específicos ====================
 
   async updateUltimoAcesso(id: number): Promise<void> {
     try {

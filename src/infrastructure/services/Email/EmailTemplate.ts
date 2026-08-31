@@ -1,5 +1,3 @@
-
-
 export type EmailStatus = 'PENDENTE' | 'APROVADO' | 'REJEITADO' | 'INFO';
 
 interface RenderEmailTemplateParams {
@@ -29,6 +27,9 @@ interface RenderEmailTemplateParams {
 
   /** Texto do rodapé */
   footerMessage?: string;
+
+  /** URL pública da logo (Opcional, se quiser passar dinamicamente) */
+  logoUrl?: string;
 }
 
 const COLORS = {
@@ -73,11 +74,6 @@ const BADGE_STYLES: Record<
   },
 };
 
-/**
- * Logo enviada como anexo inline (cid:logo)
- */
-const LOGO_SRC = 'cid:logo';
-
 export function renderEmailTemplate({
   preheader,
   title,
@@ -88,6 +84,7 @@ export function renderEmailTemplate({
   secondaryContentHtml,
   warningHtml,
   footerMessage,
+  logoUrl = 'https://typper.shop/assets/logo-horizontal.svg',
 }: RenderEmailTemplateParams): string {
   const badgeStyle = badge ? BADGE_STYLES[badge] : undefined;
 
@@ -146,25 +143,33 @@ overflow:hidden;
 border:1px solid ${COLORS.border};
 ">
 
-<!-- HEADER -->
-
+<!-- HEADER COM LOGO CENTRALIZADA -->
 <tr>
-
 <td
 align="center"
 style="
 background:${COLORS.greenDark};
-padding:40px 24px;
+padding:30px 24px;
+text-align:center;
 ">
-
+<img 
+  src="${logoUrl}" 
+  alt="Oleo Circular" 
+  width="150" 
+  style="
+    display:block;
+    border:0;
+    outline:none;
+    text-decoration:none;
+    max-width: 150px;
+    height: auto;
+  "
+/>
 </td>
-
 </tr>
 
 <!-- Barra colorida -->
-
 <tr>
-
 <td
 style="
 height:6px;
@@ -176,13 +181,10 @@ ${COLORS.yellow},
 ${COLORS.orange}
 );
 ">
-
 </td>
-
 </tr>
 
 <!-- Conteúdo -->
-
 <tr>
 
 <td style="padding:40px;">
@@ -315,9 +317,7 @@ ${secondaryContentHtml}
 </tr>
 
 <!-- Rodapé -->
-
 <tr>
-
 <td
 style="
 padding:32px;

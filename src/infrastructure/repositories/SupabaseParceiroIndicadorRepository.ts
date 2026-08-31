@@ -1,7 +1,6 @@
 import { ParceiroIndicador } from '../../domain/entities/ParceiroIndicador';
 import { supabase } from '../../shared/config/supabase';
 
-// Interface que define o formato da linha no banco
 interface ParceiroIndicadorRow {
   id: number;
   nome: string;
@@ -14,7 +13,6 @@ interface ParceiroIndicadorRow {
   criado_em: string;
 }
 
-// Interface do repositório (opcional, mas boa prática)
 export interface IParceiroIndicadorRepository {
   findById(id: number): Promise<ParceiroIndicador | null>;
   findAllAtivos(): Promise<ParceiroIndicador[]>;
@@ -27,7 +25,6 @@ export interface IParceiroIndicadorRepository {
 export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRepository {
   private readonly table = 'parceiros_indicadores';
 
-  // Mapeia uma linha do banco para a entidade de domínio
   private mapToEntity(row: ParceiroIndicadorRow): ParceiroIndicador {
     return {
       id: row.id,
@@ -42,7 +39,6 @@ export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRe
     };
   }
 
-  // Busca por ID
   async findById(id: number): Promise<ParceiroIndicador | null> {
     const { data, error } = await supabase
       .from(this.table)
@@ -57,7 +53,6 @@ export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRe
     return data ? this.mapToEntity(data as ParceiroIndicadorRow) : null;
   }
 
-  // Busca todos os indicadores ativos (ordenados por nome)
   async findAllAtivos(): Promise<ParceiroIndicador[]> {
     const { data, error } = await supabase
       .from(this.table)
@@ -73,7 +68,6 @@ export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRe
     return rows.map((row) => this.mapToEntity(row));
   }
 
-  // Busca todos os indicadores (sem filtro)
   async findAll(): Promise<ParceiroIndicador[]> {
     const { data, error } = await supabase
       .from(this.table)
@@ -88,7 +82,6 @@ export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRe
     return rows.map((row) => this.mapToEntity(row));
   }
 
-  // Cria um novo indicador
   async create(data: Omit<ParceiroIndicador, 'id' | 'criadoEm'>): Promise<ParceiroIndicador> {
     const { data: inserted, error } = await supabase
       .from(this.table)
@@ -111,9 +104,7 @@ export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRe
     return this.mapToEntity(inserted as ParceiroIndicadorRow);
   }
 
-  // Atualiza um indicador existente
   async update(id: number, data: Partial<ParceiroIndicador>): Promise<ParceiroIndicador> {
-    // Constrói o objeto de atualização apenas com os campos fornecidos
     const updateData: any = {};
     if (data.nome !== undefined) updateData.nome = data.nome;
     if (data.tipo !== undefined) updateData.tipo = data.tipo;
@@ -137,7 +128,6 @@ export class SupabaseParceiroIndicadorRepository implements IParceiroIndicadorRe
     return this.mapToEntity(updated as ParceiroIndicadorRow);
   }
 
-  // Exclui um indicador
   async delete(id: number): Promise<void> {
     const { error } = await supabase
       .from(this.table)
