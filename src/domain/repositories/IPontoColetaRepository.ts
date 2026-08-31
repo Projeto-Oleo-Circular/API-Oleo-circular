@@ -12,4 +12,6 @@ export interface IPontoColetaRepository {
     observacao: string | null
   ): Promise<PontoColeta>;
   findAll(): Promise<PontoColeta[]>;
+  delete(id: number): Promise<void>;
+
 }

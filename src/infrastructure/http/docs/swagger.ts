@@ -5,6 +5,7 @@ import { z } from 'zod';
 import {
   CriarParceiroDTOSchema,
   LoginDTOSchema,
+  AtualizarParceiroDTOSchema
 } from '../../../shared/dtos/parceiro';
 extendZodWithOpenApi(z);
 
@@ -12,6 +13,7 @@ const registry = new OpenAPIRegistry();
 
 registry.register('CriarParceiroDTO', CriarParceiroDTOSchema);
 registry.register('LoginDTO', LoginDTOSchema);
+registry.register('AtualizarParcerioDTO', AtualizarParceiroDTOSchema);
 
 const generator = new OpenApiGeneratorV3(registry.definitions);
 const zodComponents = generator.generateComponents();

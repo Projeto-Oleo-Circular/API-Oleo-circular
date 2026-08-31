@@ -122,6 +122,14 @@ async update(id: string | number, data: Partial<PontoColeta>): Promise<PontoCole
     
     return data ? data.map(this.mapToEntity) : [];
   }
+  async delete(id: number): Promise<void> {
+  const { error } = await supabase
+    .from('pontos_coleta')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw new Error(`Erro ao excluir ponto de coleta: ${error.message}`);
+}
 
   private mapToEntity(data: any): PontoColeta {
     const categoriaNumero = data.categoria;

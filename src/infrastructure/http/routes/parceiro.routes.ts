@@ -9,13 +9,14 @@ import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginPa
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
 import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
 import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
-
+import { DeletePontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/DeletePontoColetaUseCase';
 import { ParceiroController } from '../controllers/ParceiroController';
 
 import {
   AuthMiddleware,
   loginLimiter,
 } from '../middlewares/AuthMiddleware';
+import { AtualizarParceiroUseCase } from '../../../domain/use-cases/parceiro/AtualizarParceiroUseCase';
 
 const router = Router();
 
@@ -32,13 +33,17 @@ const loginParceiroUseCase = new LoginParceiroUseCase(parceiroRepository);
 const getParceiroLogadoUseCase = new GetParceiroLogadoUseCase(parceiroRepository, pontoColetaRepository);
 const verificarDisponibilidadeUseCase = new VerificarDisponibilidadeUseCase(parceiroRepository);
 const listarSolicitacoesColetaUseCase = new ListarSolicitacoesColetaUseCase(solicitacaoRepository, pontoColetaRepository);
+const deletePontoColetaUseCase = new DeletePontoColetaUseCase(pontoColetaRepository)
+const atualizarParceiroUseCase = new AtualizarParceiroUseCase(parceiroRepository);
 
 const parceiroController = new ParceiroController(
   criarParceiroUseCase,
   loginParceiroUseCase,
   getParceiroLogadoUseCase,
   verificarDisponibilidadeUseCase,
-  listarSolicitacoesColetaUseCase
+  listarSolicitacoesColetaUseCase,
+  deletePontoColetaUseCase,
+  atualizarParceiroUseCase
 );
 
 /**
@@ -234,6 +239,71 @@ router.get(
   AuthMiddleware.verify,
   AuthMiddleware.requireRole('parceiro'),
   parceiroController.listar
+);
+/**
+* @openapi
+ * /parceiros/pontos-coleta/{id}:
+ *   delete:
+ *     tags:
+ *       - Parceiro
+ *     summary: Exclui um ponto de coleta pertencente ao parceiro autenticado
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do ponto de coleta
+ *     responses:
+ *       204:
+ *         description: Ponto de coleta excluído com sucesso.
+ *       401:
+ *         description: Não autorizado.
+ *       403:
+ *         description: Você não tem permissão para excluir este ponto.
+ *       404:
+ *         description: Ponto de coleta não encontrado.
+ *       400:
+ *         description: ID inválido.
+ */
+router.delete(
+  '/pontos-coleta/:id',
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('parceiro'),
+  parceiroController.deletePontoColeta
+);
+/**
+ * @openapi
+ * /parceiros/me:
+ *   put:
+ *     tags:
+ *       - Parceiro
+ *     summary: Atualiza os dados do parceiro autenticado
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AtualizarParcerioDTO' 
+ *     responses:
+ *       200:
+ *         description: Dados atualizados com sucesso.
+ *       400:
+ *         description: Dados inválidos.
+ *       401:
+ *         description: Não autorizado.
+ *       409:
+ *         description: E-mail ou documento já em uso.
+ */
+router.put(
+  '/me',
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('parceiro'),
+  parceiroController.atualizarPerfil
 );
 
 export default router;

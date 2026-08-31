@@ -1,19 +1,24 @@
 import { Request, Response } from 'express';
 import axios from 'axios';
+import { AtualizarParceiroDTOSchema } from '../../../shared/dtos/parceiro/AtualizarParceiroDTO';
 
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
 import { GetParceiroLogadoUseCase } from '../../../domain/use-cases/parceiro/GetParceiroLogadoUseCase';
 import { VerificarDisponibilidadeUseCase } from '../../../domain/use-cases/parceiro/VerificarDisponibilidadeUseCase';
 import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
-
+import { DeletePontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/DeletePontoColetaUseCase';
+import { AtualizarParceiroUseCase} from '../../../domain/use-cases/parceiro/AtualizarParceiroUseCase';
 export class ParceiroController {
   constructor(
     private readonly criarParceiroUseCase: CriarParceiroUseCase,
     private readonly loginParceiroUseCase: LoginParceiroUseCase,
     private readonly getParceiroLogadoUseCase: GetParceiroLogadoUseCase,
     private readonly verificarDisponibilidadeUseCase: VerificarDisponibilidadeUseCase,
-    private readonly listarSolicitacoesColetaUseCase: ListarSolicitacoesColetaUseCase
+    private readonly listarSolicitacoesColetaUseCase: ListarSolicitacoesColetaUseCase,
+    private readonly deletePontoColetaUseCase: DeletePontoColetaUseCase,
+    private readonly atualizarParceiro: AtualizarParceiroUseCase
+
   ) {
     this.criar = this.criar.bind(this);
     this.login = this.login.bind(this);
@@ -23,6 +28,8 @@ export class ParceiroController {
     this.verificarDisponibilidade =
       this.verificarDisponibilidade.bind(this);
     this.listar = this.listar.bind(this);
+    this.deletePontoColeta = this.deletePontoColeta.bind(this);
+    this.atualizarPerfil = this.atualizarPerfil.bind(this);
   }
 
   async criar(req: Request, res: Response): Promise<void> {
@@ -181,4 +188,75 @@ export class ParceiroController {
       res.status(400).json({ message });
     }
   }
+   async deletePontoColeta(req: Request, res: Response): Promise<void> {
+  try {
+    const parceiroId = req.user?.id;
+    if (!parceiroId) {
+      res.status(401).json({ message: 'Usuário não autenticado.' });
+      return;
+    }
+
+    // Extrai o id dos parâmetros e garante que seja uma string
+    const idParam = req.params.id;
+    if (!idParam) {
+      res.status(400).json({ message: 'ID do ponto de coleta não fornecido.' });
+      return;
+    }
+
+    // Se for um array, pega o primeiro elemento
+    const idString = Array.isArray(idParam) ? idParam[0] : idParam;
+    const pontoColetaId = parseInt(idString, 10);
+
+    if (isNaN(pontoColetaId)) {
+      res.status(400).json({ message: 'ID do ponto de coleta inválido.' });
+      return;
+    }
+
+    await this.deletePontoColetaUseCase.execute(parceiroId, pontoColetaId);
+
+    res.status(204).send();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro inesperado';
+
+    if (message.includes('não encontrado')) {
+      res.status(404).json({ message });
+    } else if (message.includes('permissão')) {
+      res.status(403).json({ message });
+    } else {
+      res.status(400).json({ message });
+    }
+  }
+}
+
+async atualizarPerfil(req: Request, res: Response): Promise<void> {
+  try {
+    const parceiroId = req.user?.id;
+    if (!parceiroId) {
+      res.status(401).json({ message: 'Usuário não autenticado.' });
+      return;
+    }
+
+    // 1. Validar o body com o schema Zod
+    const dadosValidados = AtualizarParceiroDTOSchema.parse(req.body);
+
+    // 2. Executar o use case com os dados validados
+    const parceiroAtualizado = await this.atualizarParceiro.execute(
+      parceiroId,
+      dadosValidados
+    );
+
+    res.status(200).json(parceiroAtualizado);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro inesperado';
+
+    if (message.includes('não encontrado')) {
+      res.status(404).json({ message });
+    } else if (message.includes('permissão')) {
+      res.status(403).json({ message });
+    } else {
+      res.status(400).json({ message });
+    }
+  }
+
+}
 }
