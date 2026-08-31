@@ -7,7 +7,6 @@ import { AtualizarPontoColetaUseCase } from '../../../domain/use-cases/pontoCole
 
 import { PontoColetaController } from '../controllers/PontoColetaController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
-import { ParceiroIndicadorController } from '../controllers/ParceiroIndicadorController';
 import { SupabaseParceiroRepository } from '../../repositories/SupabaseParceiroRepository';
 
 const router = Router();
@@ -20,7 +19,7 @@ const pontoColetaRepository = new SupabasePontoColetaRepository();
 const parceiroRepository = new SupabaseParceiroRepository();
 const criarPontoColetaUseCase = new CriarPontoColetaUseCase(pontoColetaRepository);
 const getPontoColetaUseCase = new GetPontoColetaUseCase(pontoColetaRepository);
-const atualizarPontoColetaUseCase = new AtualizarPontoColetaUseCase(pontoColetaRepository,parceiroRepository);
+const atualizarPontoColetaUseCase = new AtualizarPontoColetaUseCase(pontoColetaRepository, parceiroRepository);
 
 const pontoColetaController = new PontoColetaController(
   getPontoColetaUseCase,
@@ -128,6 +127,7 @@ router.post(
   AuthMiddleware.requireRole('parceiro'),
   (req, res) => pontoColetaController.create(req, res)
 );
+
 /**
  * @openapi
  * /pontos-coleta/{id}:
@@ -135,7 +135,7 @@ router.post(
  *     tags:
  *       - Ponto de Coleta
  *     summary: Atualizar um ponto de coleta existente
- *     description: Atualiza os dados de um ponto de coleta. Apenas o parceiro proprietário do ponto tem permissão para editá-lo. Todos os campos no corpo da requisição são OPCIONAIS; envie apenas o que deseja atualizar ou todos os campos de uma vez.
+ *     description: Atualiza os dados de um ponto de coleta. Apenas o parceiro proprietário do ponto tem permissão para editá-lo.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -147,89 +147,13 @@ router.post(
  *         description: ID do ponto de coleta a ser atualizado
  *     requestBody:
  *       required: true
- *       description: Objeto com os campos para atualização. Nenhum campo é obrigatório.
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               nomePontoColeta:
- *                 type: string
- *                 example: Ponto Principal - Filial Centro
- *               categoria:
- *                 oneOf:
- *                   - type: integer
- *                     enum: [1, 2, 3, 4, 5, 6, 7]
- *                   - type: string
- *                     example: Escola / Universidade
- *               cep:
- *                 type: string
- *                 example: "01001000"
- *               logradouro:
- *                 type: string
- *                 example: Praça da Sé
- *               numero:
- *                 type: string
- *                 example: "100"
- *               bairro:
- *                 type: string
- *                 example: Sé
- *               cidade:
- *                 type: string
- *                 example: São Paulo
- *               estado:
- *                 type: string
- *                 example: SP
- *               complemento:
- *                 type: string
- *                 example: Bloco A
- *               expectativaGeracao:
- *                 type: number
- *                 example: 150
- *               capacidadeBombona:
- *                 type: number
- *                 example: 200
- *               nivelAtualPct:
- *                 type: number
- *                 description: Porcentagem do nível atual da bombona (0 a 100)
- *                 example: 75
- *               statusBombona:
- *                 type: string
- *                 enum: [VAZIA, PARCIAL, CHEIA, EM_COLETA]
- *                 example: PARCIAL
- *           examples:
- *             todosOsCampos:
- *               summary: Exemplo completo (atualizando TODOS os campos de uma vez)
- *               value:
- *                 nomePontoColeta: "Ponto Matriz Renovado"
- *                 categoria: 2
- *                 cep: "01310100"
- *                 logradouro: "Avenida Paulista"
- *                 numero: "1500"
- *                 bairro: "Bela Vista"
- *                 cidade: "São Paulo"
- *                 estado: "SP"
- *                 complemento: "Conjunto 42"
- *                 expectativaGeracao: 300
- *                 capacidadeBombona: 500
- *                 nivelAtualPct: 90
- *                 statusBombona: "CHEIA"
- *             apenasNivelBombona:
- *               summary: Exemplo parcial (atualizando apenas o nível da bombona)
- *               value:
- *                 nivelAtualPct: 80
- *                 statusBombona: "PARCIAL"
+ *            type: object
  *     responses:
  *       200:
  *         description: Ponto de coleta atualizado com sucesso
- *       400:
- *         description: Dados de entrada inválidos
- *       401:
- *         description: Usuário não autenticado
- *       403:
- *         description: Acesso negado. O ponto de coleta pertence a outro parceiro
- *       404:
- *         description: Ponto de coleta não encontrado
  */
 router.put(
   '/:id',
@@ -264,8 +188,4 @@ router.put(
  */
 router.get('/:id', (req, res) => pontoColetaController.findById(req, res));
 
-
-
-router.post('/esqueci-senha', parceiroController.solicitarRedefinicaoSenha);
-router.post('/redefinir-senha', parceiroController.redefinirSenha);
 export default router;

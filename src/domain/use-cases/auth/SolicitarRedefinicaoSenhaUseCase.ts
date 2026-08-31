@@ -1,4 +1,3 @@
-// domain/use-cases/auth/SolicitarRedefinicaoSenhaUseCase.ts
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import { IPasswordResetTokenRepository } from '../../repositories/IPasswordResetTokenRepository';
 import { EmailService } from '../../../infrastructure/services/Email/EmailService';
@@ -7,9 +6,9 @@ import crypto from 'crypto';
 
 export class SolicitarRedefinicaoSenhaUseCase {
   constructor(
-    private parceiroRepository: IParceiroRepository,
-    private tokenRepository: IPasswordResetTokenRepository,
-    private emailService: EmailService
+    private readonly parceiroRepository: IParceiroRepository,
+    private readonly tokenRepository: IPasswordResetTokenRepository
+    // Removido o emailService daqui para usar o padrão estático igual ao CriarParceiroUseCase
   ) {}
 
   async execute(dados: SolicitarRedefinicaoSenhaDTO): Promise<void> {
@@ -20,11 +19,11 @@ export class SolicitarRedefinicaoSenhaUseCase {
       return;
     }
 
-    // 2. Gera token único (ex: UUID ou JWT)
+    // 2. Gera token único
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
 
-    // 3. Remove tokens antigos para este e-mail (opcional)
+    // 3. Remove tokens antigos para este e-mail
     await this.tokenRepository.deleteByEmail(dados.email);
 
     // 4. Salva token no banco
@@ -35,8 +34,26 @@ export class SolicitarRedefinicaoSenhaUseCase {
       used: false,
     });
 
-    // 5. Envia e-mail com link
+    // 5. Envia e-mail com link (usando o padrão estático igual ao CriarParceiroUseCase)
     const resetLink = `${process.env.FRONTEND_URL}/redefinir-senha?token=${token}`;
-    await this.emailService.sendPasswordResetEmail(dados.email, resetLink);
+    const nomeParceiro = parceiro.nome || parceiro.razaoSocial || 'Parceiro';
+
+    await EmailService.send({
+      to: dados.email,
+      subject: 'Redefinição de Senha',
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <h2>Olá, ${nomeParceiro}</h2>
+          <p>Recebemos uma solicitação para redefinir a sua senha.</p>
+          <p>Para criar uma nova senha, clique no link abaixo (o link expira em 15 minutos):</p>
+          <p>
+            <a href="${resetLink}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+              Redefinir Senha
+            </a>
+          </p>
+          <p>Se você não solicitou isso, pode ignorar este e-mail.</p>
+        </div>
+      `,
+    });
   }
 }
