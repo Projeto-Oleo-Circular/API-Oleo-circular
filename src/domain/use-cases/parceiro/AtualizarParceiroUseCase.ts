@@ -1,19 +1,22 @@
-// domain/use-cases/parceiro/AtualizarParceiroUseCase.ts
 import { IParceiroRepository } from '../../repositories/IParceiroRepository';
 import { AtualizarParceiroDTO } from '../../../shared/dtos/parceiro/AtualizarParceiroDTO';
 import { Parceiro } from '../../entities/Parceiro';
+import bcrypt from 'bcrypt';
+
+export type AtualizarPerfilParceiroPayload = AtualizarParceiroDTO & {
+  senhaAtual?: string;
+  novaSenha?: string;
+};
 
 export class AtualizarParceiroUseCase {
   constructor(private parceiroRepository: IParceiroRepository) {}
 
-  async execute(parceiroId: number, dados: AtualizarParceiroDTO): Promise<Parceiro> {
-    // 1. Buscar parceiro existente
+  async execute(parceiroId: number, dados: AtualizarPerfilParceiroPayload): Promise<Parceiro> {
     const parceiroExistente = await this.parceiroRepository.findById(parceiroId);
     if (!parceiroExistente) {
       throw new Error('Parceiro não encontrado.');
     }
 
-    // 2. Verificar se email está sendo alterado e se já existe
     if (dados.email && dados.email !== parceiroExistente.email) {
       const emailExistente = await this.parceiroRepository.findByEmail(dados.email);
       if (emailExistente) {
@@ -21,7 +24,6 @@ export class AtualizarParceiroUseCase {
       }
     }
 
-    // 3. Verificar se documento está sendo alterado e se já existe
     if (dados.documento && dados.documento !== parceiroExistente.documento) {
       const docExistente = await this.parceiroRepository.findByDocumento(dados.documento);
       if (docExistente) {
@@ -29,7 +31,6 @@ export class AtualizarParceiroUseCase {
       }
     }
 
-    // 4. Montar objeto de atualização (apenas campos permitidos)
     const updateData: any = {};
     if (dados.nome !== undefined) updateData.nome = dados.nome;
     if (dados.razaoSocial !== undefined) updateData.razaoSocial = dados.razaoSocial;
@@ -43,6 +44,7 @@ export class AtualizarParceiroUseCase {
     if (dados.tipoPorte !== undefined) updateData.tipoPorte = dados.tipoPorte;
     if (dados.expectativaGeracao !== undefined) updateData.expectativaGeracao = dados.expectativaGeracao;
     if (dados.observacao !== undefined) updateData.observacao = dados.observacao;
+    
     // Endereço
     if (dados.cep !== undefined) updateData.cep = dados.cep;
     if (dados.logradouro !== undefined) updateData.logradouro = dados.logradouro;
@@ -54,7 +56,20 @@ export class AtualizarParceiroUseCase {
     if (dados.latitude !== undefined) updateData.latitude = dados.latitude;
     if (dados.longitude !== undefined) updateData.longitude = dados.longitude;
 
-    // 5. Atualizar no repositório
+    if (dados.novaSenha && dados.novaSenha.trim() !== '') {
+      if (!dados.senhaAtual) {
+        throw new Error('Para alterar a senha, você precisa informar a senha atual.');
+      }
+
+      const senhaValida = await bcrypt.compare(dados.senhaAtual, parceiroExistente.senhaHash);
+      if (!senhaValida) {
+        throw new Error('A senha atual está incorreta.');
+      }
+
+      const saltRounds = 10;
+      updateData.senhaHash = await bcrypt.hash(dados.novaSenha, saltRounds);
+    }
+
     const parceiroAtualizado = await this.parceiroRepository.update(parceiroId, updateData);
     return parceiroAtualizado;
   }

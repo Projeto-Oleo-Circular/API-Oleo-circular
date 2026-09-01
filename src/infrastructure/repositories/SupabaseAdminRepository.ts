@@ -80,30 +80,32 @@ async create(adminData: Omit<Admin, 'id' | 'criadoEm' | 'ultimoAcesso'>): Promis
       atulizadoEm: new Date(row.updated),
     };
   }
-  async update(id: number, data: Partial<Omit<Admin, 'id' | 'criadoEm' | 'ultimoAcesso'>>): Promise<Admin> {
-    try {
-      const updateData: any = {};
+async update(id: number, data: Partial<Admin>): Promise<Admin> {
+    const updateData: any = {};
 
-      if (data.nome !== undefined) updateData.nome = data.nome;
-      if (data.email !== undefined) updateData.email = data.email;
-      if (data.senhaHash !== undefined) updateData.senha_hash = data.senhaHash;
-      if (data.nivelAcesso !== undefined) updateData.nivel_acesso = data.nivelAcesso;
-
-      updateData.updated = new Date().toISOString();
-
-      const { data: result, error } = await supabase
-        .from(this.tableName)
-        .update(updateData)
-        .eq('id', id)
-        .select('*')
-        .single();
-
-      if (error) throw new Error(`Erro ao atualizar administrador: ${error.message}`);
-      return this.mapToEntity(result as AdminRow);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado ao atualizar administrador';
-      throw new Error(message);
+    if (data.nome !== undefined) updateData.nome = data.nome;
+    if (data.email !== undefined) updateData.email = data.email;
+    
+    if (data.senhaHash !== undefined) {
+      updateData.senha_hash = data.senhaHash;
     }
+
+    if (data.nivelAcesso !== undefined) updateData.nivel_acesso = data.nivelAcesso;
+
+    updateData.updated = new Date().toISOString();
+
+    const { data: result, error } = await supabase
+      .from('admins') 
+      .update(updateData)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new Error(`Erro ao atualizar administrador: ${error.message}`);
+    }
+
+    return this.mapToEntity(result);
   }
 
   async delete(id: number): Promise<void> {

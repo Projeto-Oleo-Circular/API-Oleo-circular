@@ -23,7 +23,7 @@ export class ParceiroController {
     private readonly verificarDisponibilidadeUseCase: VerificarDisponibilidadeUseCase,
     private readonly listarSolicitacoesColetaUseCase: ListarSolicitacoesColetaUseCase,
     private readonly deletePontoColetaUseCase: DeletePontoColetaUseCase,
-    private readonly atualizarParceiro: AtualizarParceiroUseCase,
+    private readonly atualizarParceiroUseCase   : AtualizarParceiroUseCase,
     private readonly solicitarRedefinicaoSenhaUseCase: SolicitarRedefinicaoSenhaUseCase,
     private readonly redefinirSenhaUseCase: RedefinirSenhaUseCase
   ) {
@@ -85,7 +85,6 @@ export class ParceiroController {
     try {
       const { cep } = req.params;
 
-      // Nota: toLocaleString() não é necessário aqui, mas não quebra o código.
       const cepLimpo = String(cep).replace(/\D/g, '');
 
       if (cepLimpo.length !== 8) {
@@ -190,39 +189,41 @@ export class ParceiroController {
     }
   }
 
-  async atualizarPerfil(req: Request, res: Response): Promise<void> {
+ async atualizarPerfil(req: Request, res: Response) {
     try {
-      const parceiroId = req.user?.id;
+      const parceiroId = req.user?.id; 
+      
       if (!parceiroId) {
-        res.status(401).json({ message: 'Usuário não autenticado.' });
-        return;
+        return res.status(401).json({ message: 'Usuário não autenticado' });
       }
 
-      const dadosValidados = AtualizarParceiroDTOSchema.parse(req.body);
+      const { nome, email, telefone, senhaAtual, novaSenha } = req.body;
 
-      const parceiroAtualizado = await this.atualizarParceiro.execute(
-        parceiroId,
-        dadosValidados
-      );
+   const parceiroAtualizado = await this.atualizarParceiroUseCase.execute(parceiroId, {
+        nome,
+        email,
+        telefone,
+        senhaAtual,
+        novaSenha
+      } as any);
 
-      res.status(200).json(parceiroAtualizado);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(200).json({
+        id: parceiroAtualizado.id,
+        nome: parceiroAtualizado.nome,
+        razaoSocial: parceiroAtualizado.razaoSocial,
+        email: parceiroAtualizado.email,
+        telefone: parceiroAtualizado.telefone,
+      });
 
-      if (message.includes('não encontrado')) {
-        res.status(404).json({ message });
-      } else if (message.includes('permissão')) {
-        res.status(403).json({ message });
-      } else {
-        res.status(400).json({ message });
-      }
+    } catch (error: any) {
+      const message = error.message || 'Erro inesperado ao atualizar perfil';
+      res.status(400).json({ message });
     }
   }
 
   async solicitarRedefinicaoSenha(req: Request, res: Response): Promise<void> {
     try {
       const dados = SolicitarRedefinicaoSenhaDTOSchema.parse(req.body);
-      // Ajustado para usar a propriedade com o nome correto injetada no construtor
       await this.solicitarRedefinicaoSenhaUseCase.execute(dados);
       res.status(200).json({ message: 'E-mail de redefinição enviado.' });
     } catch (error) {
@@ -237,7 +238,6 @@ export class ParceiroController {
   async redefinirSenha(req: Request, res: Response): Promise<void> {
     try {
       const dados = RedefinirSenhaDTOSchema.parse(req.body);
-      // Ajustado para usar a propriedade com o nome correto injetada no construtor
       await this.redefinirSenhaUseCase.execute(dados);
       res.status(200).json({ message: 'Senha redefinida com sucesso.' });
     } catch (error) {

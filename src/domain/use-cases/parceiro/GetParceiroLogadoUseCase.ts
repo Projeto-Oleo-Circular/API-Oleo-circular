@@ -20,9 +20,9 @@ export class GetParceiroLogadoUseCase {
     const {
       senhaHash,
       documento,
-      telefone,
+     
       aceiteMarketing,
-      email,
+     
       redesSociais,
       ...parceiroSeguro
     } = parceiro;

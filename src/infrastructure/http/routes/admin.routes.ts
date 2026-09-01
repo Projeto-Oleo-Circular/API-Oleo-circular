@@ -19,7 +19,7 @@ import { ListarTodasSolicitacoesColetaUseCase } from '../../../domain/use-cases/
 import { GetAlogadoUseCase } from '../../../domain/use-cases/admin/getUserAUseCase';
 import { AdminManageUseCase } from '../../../domain/use-cases/admin/AdminManageUseCase';
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
-
+import { AtualizarAdminUseCase } from '../../../domain/use-cases/admin/AtualizarAdminUseCase';
 // Controllers
 import { AdminController } from '../controllers/AdminController';
 
@@ -38,7 +38,7 @@ const indicadorRepository = new SupabaseParceiroIndicadorRepository();
 // ===================== INSTANCIAR USE CASES =====================
 const loginAdminUseCase = new LoginAdminUseCase(adminRepository);
 const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
-
+const atualizarAdminUseCase = new AtualizarAdminUseCase(adminRepository)
 const atualizarStatusParceiroUseCase = new AtualizarStatusParceiroUseCase(
   parceiroRepository,
   pontoColetaRepository
@@ -84,7 +84,8 @@ const adminController = new AdminController(
   listarTodasSolicitacoesColetaUseCase,
   getUser,
   adminManageUseCase,
-    criarParceiroUseCase,
+  criarParceiroUseCase,
+  atualizarAdminUseCase
 
 
   
@@ -836,5 +837,46 @@ router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) =
  *         description: Indicador não encontrado
  */
 router.delete('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.excluirIndicador(req, res));
-
+/**
+ * @swagger
+ * /admin/admins/{id}:
+ *   put:
+ *     summary: Atualiza um administrador existente (apenas admin)
+ *     tags: [Admin - Gestão de Admins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do administrador
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               senha:
+ *                 type: string
+ *                 format: password
+ *               nivelAcesso:
+ *                 type: string
+ *                 enum: [admin, gerente]
+ *     responses:
+ *       200:
+ *         description: Administrador atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos ou email já em uso
+ *       404:
+ *         description: Administrador não encontrado
+ */
+router.put('/admins/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarAdmin(req, res));
 export default router;

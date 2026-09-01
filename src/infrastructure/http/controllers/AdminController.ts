@@ -12,7 +12,7 @@ import { ListarPontosColetaQuerySchema } from '../../../shared/dtos/pontoColeta/
 import { GetAlogadoUseCase} from '../../../domain/use-cases/admin/getUserAUseCase'
 import{AdminManageUseCase } from '../../../domain/use-cases/admin/AdminManageUseCase'
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
-
+import { AtualizarAdminUseCase } from '../../../domain/use-cases/admin/AtualizarAdminUseCase';
 
 export class AdminController {
   constructor(
@@ -26,7 +26,8 @@ export class AdminController {
     private readonly listarTodasSolicitacoesColetaUseCase: ListarTodasSolicitacoesColetaUseCase,
     private readonly getUser : GetAlogadoUseCase,
     private readonly adminUseCase: AdminManageUseCase ,
-        private readonly criarParceiroUseCase: CriarParceiroUseCase,
+    private readonly criarParceiroUseCase: CriarParceiroUseCase,
+    private readonly atualizarAdminUseCase: AtualizarAdminUseCase
 
 ) {}
 
@@ -188,16 +189,6 @@ export class AdminController {
     }
 }
 
-  async atualizarAdmin(req: Request, res: Response) {
-    try {
-      const admin = await this.adminUseCase.atualizarAdmin(Number(req.params.id), req.body);
-      res.json(admin);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
-      res.status(400).json({ message });
-    }
-  }
-
   async alterarSenhaAdmin(req: Request, res: Response) {
     try {
       const { id, senhaAtual, novaSenha } = req.body;
@@ -279,6 +270,31 @@ export class AdminController {
       res.status(204).send();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro inesperado';
+      res.status(400).json({ message });
+    }
+  }
+  async atualizarAdmin(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { nome, email, senhaAtual, novaSenha, nivelAcesso } = req.body;
+
+      const adminAtualizado = await this.atualizarAdminUseCase.execute(Number(id), {
+        nome,
+        email,
+        senhaAtual,
+        novaSenha,
+        nivelAcesso,
+      });
+
+      res.status(200).json({
+        id: adminAtualizado.id,
+        nome: adminAtualizado.nome,
+        email: adminAtualizado.email,
+        nivelAcesso: adminAtualizado.nivelAcesso,
+        atulizadoEm: adminAtualizado.atulizadoEm,
+      });
+    } catch (error: any) {
+      const message = error.message || 'Erro inesperado ao atualizar administrador';
       res.status(400).json({ message });
     }
   }

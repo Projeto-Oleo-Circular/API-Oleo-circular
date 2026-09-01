@@ -142,6 +142,16 @@ export const AtualizarParceiroDTOSchema = z
       .optional()
       .transform((val) => (val ? Number(val) : undefined))
       .openapi({ example: '-46.633308' }),
+
+    senhaAtual: z
+      .string()
+      .optional()
+      .openapi({ example: 'senhaAntiga123' }),
+      
+    novaSenha: z
+      .string()
+      .optional()
+      .openapi({ example: 'novaSenha123' }),
   })
   .superRefine((data, ctx) => {
 
