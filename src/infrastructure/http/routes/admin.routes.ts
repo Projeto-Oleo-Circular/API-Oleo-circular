@@ -1,11 +1,11 @@
 import { Router } from 'express';
 
 // Repositórios
-import { SupabaseAdminRepository } from '../../../infrastructure/repositories/SupabaseAdminRepository';
-import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
-import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
-import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
-import { SupabaseParceiroIndicadorRepository } from '../../../infrastructure/repositories/SupabaseParceiroIndicadorRepository';
+import { DBScriptAdminRepository } from '../../repositories/DBScriptAdminRepository';
+import { DBScriptParceiroRepository } from '../../repositories/DBScriptParceiroRepository';
+import { DBScriptPontoColetaRepository } from '../../repositories/DBScriptPontoColetaRepository';
+import { DBScriptSolicitacaoRepository } from '../../repositories/DBScriptSolicitacaoRepository';
+import { DBScriptParceiroIndicadorRepository } from '../../repositories/DBScriptParceiroIndicadorRepository';
 
 // Use Cases
 import { LoginAdminUseCase } from '../../../domain/use-cases/admin/LoginAdminUseCase';
@@ -29,11 +29,11 @@ import { AuthMiddleware, loginLimiter } from '../middlewares/AuthMiddleware';
 const router = Router();
 
 // ===================== INSTANCIAR REPOSITÓRIOS =====================
-const adminRepository = new SupabaseAdminRepository();
-const parceiroRepository = new SupabaseParceiroRepository();
-const pontoColetaRepository = new SupabasePontoColetaRepository();
-const solicitacaoRepository = new SupabaseSolicitacaoRepository();
-const indicadorRepository = new SupabaseParceiroIndicadorRepository();
+const adminRepository = new DBScriptAdminRepository();
+const parceiroRepository = new DBScriptParceiroRepository();
+const pontoColetaRepository = new DBScriptPontoColetaRepository();
+const solicitacaoRepository = new DBScriptSolicitacaoRepository();
+const indicadorRepository = new DBScriptParceiroIndicadorRepository();
 
 // ===================== INSTANCIAR USE CASES =====================
 const loginAdminUseCase = new LoginAdminUseCase(adminRepository);

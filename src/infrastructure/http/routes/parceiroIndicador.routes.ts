@@ -2,11 +2,11 @@ import { Router } from 'express';
 
 import { ParceiroIndicadorController } from '../controllers/ParceiroIndicadorController';
 import { ListarParceirosIndicadorAtivos } from '../../../domain/use-cases/parceiroIndicador/ListarParceirosIndicadorAtivos';
-import { SupabaseParceiroIndicadorRepository } from '../../../infrastructure/repositories/SupabaseParceiroIndicadorRepository';
+import { DBScriptParceiroIndicadorRepository } from '../../repositories/DBScriptParceiroIndicadorRepository';
 
 const router = Router();
 
-const parceiroIndicadorRepository = new SupabaseParceiroIndicadorRepository();
+const parceiroIndicadorRepository = new DBScriptParceiroIndicadorRepository();
 
 const listarParceirosIndicadorAtivos = new ListarParceirosIndicadorAtivos(
   parceiroIndicadorRepository

@@ -1,9 +1,9 @@
 import { Router } from 'express';
 
-import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
-import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
-import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
-import { SupabasePasswordResetTokenRepository } from '../../../infrastructure/repositories/SupabasePasswordResetTokenRepository'; // <- NOVO: Repositório de tokens
+import { DBScriptParceiroRepository } from '../../repositories/DBScriptParceiroRepository';
+import { DBScriptPontoColetaRepository } from '../../repositories/DBScriptPontoColetaRepository';
+import { DBScriptSolicitacaoRepository } from '../../repositories/DBScriptSolicitacaoRepository';
+import { DBScriptPasswordResetTokenRepository } from '../../repositories/DBScriptPasswordResetTokenRepository'; // <- NOVO: Repositório de tokens
 
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { LoginParceiroUseCase } from '../../../domain/use-cases/parceiro/LoginParceiroUseCase';
@@ -24,10 +24,10 @@ const router = Router();
 // DEPENDÊNCIAS & CONTROLLER
 // ======================
 
-const parceiroRepository = new SupabaseParceiroRepository();
-const pontoColetaRepository = new SupabasePontoColetaRepository();
-const solicitacaoRepository = new SupabaseSolicitacaoRepository();
-const passwordResetTokenRepository = new SupabasePasswordResetTokenRepository()
+const parceiroRepository = new DBScriptParceiroRepository();
+const pontoColetaRepository = new DBScriptPontoColetaRepository();
+const solicitacaoRepository = new DBScriptSolicitacaoRepository();
+const passwordResetTokenRepository = new DBScriptPasswordResetTokenRepository()
 
 const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
 const loginParceiroUseCase = new LoginParceiroUseCase(parceiroRepository);

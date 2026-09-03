@@ -1,13 +1,13 @@
 import { Router } from 'express';
 
-import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
+import { DBScriptPontoColetaRepository } from '../../repositories/DBScriptPontoColetaRepository';
 import { CriarPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/CriarPontoColetaUseCase';
 import { GetPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/GetPontoColetaUseCase';
 import { AtualizarPontoColetaUseCase } from '../../../domain/use-cases/pontoColeta/UpdatePontoColetaUseCase';
 
 import { PontoColetaController } from '../controllers/PontoColetaController';
 import { AuthMiddleware } from '../middlewares/AuthMiddleware';
-import { SupabaseParceiroRepository } from '../../repositories/SupabaseParceiroRepository';
+import { DBScriptParceiroRepository } from '../../repositories/DBScriptParceiroRepository';
 
 const router = Router();
 
@@ -15,8 +15,8 @@ const router = Router();
 // DEPENDÊNCIAS
 // ======================
 
-const pontoColetaRepository = new SupabasePontoColetaRepository();
-const parceiroRepository = new SupabaseParceiroRepository();
+const pontoColetaRepository = new DBScriptPontoColetaRepository();
+const parceiroRepository = new DBScriptParceiroRepository();
 const criarPontoColetaUseCase = new CriarPontoColetaUseCase(pontoColetaRepository);
 const getPontoColetaUseCase = new GetPontoColetaUseCase(pontoColetaRepository);
 const atualizarPontoColetaUseCase = new AtualizarPontoColetaUseCase(pontoColetaRepository, parceiroRepository);
@@ -38,6 +38,69 @@ const pontoColetaController = new PontoColetaController(
  *   - name: Ponto de Coleta
  *     description: Operações relacionadas aos pontos de coleta
  */
+
+/**
+ * @openapi
+ * /pontos-coleta/public:
+ *   get:
+ *     tags:
+ *       - Ponto de Coleta
+ *     summary: Listar pontos de coleta públicos (aprovados)
+ *     description: Retorna dados públicos dos pontos de coleta, sem informações sensíveis
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: categoria
+ *         schema:
+ *           type: string
+ *         description: Filtrar por categoria
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Buscar por nome, endereço ou estabelecimento
+ *     responses:
+ *       200:
+ *         description: Lista de pontos de coleta públicos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: number
+ *                       nomePontoColeta:
+ *                         type: string
+ *                       categoria:
+ *                         type: string
+ *                       endereco:
+ *                         type: object
+ *                       estabelecimento:
+ *                         type: object
+ *                       capacidade:
+ *                         type: object
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ */
+router.get('/public', (req, res) => pontoColetaController.listarPublicos(req, res));
 
 // ======================
 // ROTAS PROTEGIDAS ESPECÍFICAS

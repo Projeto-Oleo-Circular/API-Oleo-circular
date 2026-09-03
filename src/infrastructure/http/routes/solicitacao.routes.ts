@@ -1,9 +1,9 @@
 // presentation/routes/SolicitacaoColetaRouter.ts
 import { Router } from 'express';
 
-import { SupabaseSolicitacaoRepository } from '../../../infrastructure/repositories/SupabaseSolicitacaoRepository';
-import { SupabasePontoColetaRepository } from '../../../infrastructure/repositories/SupabasePontoColetaRepository';
-import { SupabaseParceiroRepository } from '../../../infrastructure/repositories/SupabaseParceiroRepository';
+import { DBScriptSolicitacaoRepository } from '../../repositories/DBScriptSolicitacaoRepository';
+import { DBScriptPontoColetaRepository } from '../../repositories/DBScriptPontoColetaRepository';
+import { DBScriptParceiroRepository } from '../../repositories/DBScriptParceiroRepository';
 import { CriarSolicitacaoColetaUseCase } from '../../../domain/use-cases/solicitacao/CriarSolicitacaoColetaUseCase';
 import { ListarSolicitacoesColetaUseCase } from '../../../domain/use-cases/solicitacao/ListarSolicitacoesColetaUseCase';
 import { SolicitacaoColetaController } from '../controllers/SolicitarColetaController';
@@ -15,9 +15,9 @@ const router = Router();
 // DEPENDÊNCIAS
 // ======================
 
-const solicitacaoRepository = new SupabaseSolicitacaoRepository();
-const pontoColetaRepository = new SupabasePontoColetaRepository();
-const parceiroRepository = new SupabaseParceiroRepository();
+const solicitacaoRepository = new DBScriptSolicitacaoRepository();
+const pontoColetaRepository = new DBScriptPontoColetaRepository();
+const parceiroRepository = new DBScriptParceiroRepository();
 
 const criarSolicitacaoUseCase = new CriarSolicitacaoColetaUseCase(
   solicitacaoRepository,
