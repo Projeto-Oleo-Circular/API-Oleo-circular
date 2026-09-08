@@ -13,7 +13,7 @@ import { GetAlogadoUseCase} from '../../../domain/use-cases/admin/getUserAUseCas
 import{AdminManageUseCase } from '../../../domain/use-cases/admin/AdminManageUseCase'
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { AtualizarAdminUseCase } from '../../../domain/use-cases/admin/AtualizarAdminUseCase';
-
+import { CriarSolicitacaoColetaAdminUseCase } from '../../../domain/use-cases/admin/CriarSolicitacaoColetaAdminUseCase';
 export class AdminController {
   constructor(
     private readonly loginAdminUseCase: LoginAdminUseCase,
@@ -27,6 +27,7 @@ export class AdminController {
     private readonly getUser : GetAlogadoUseCase,
     private readonly adminUseCase: AdminManageUseCase ,
     private readonly criarParceiroUseCase: CriarParceiroUseCase,
+    private readonly criarSolicitacaoColetaAdminUseCase: CriarSolicitacaoColetaAdminUseCase,
     private readonly atualizarAdminUseCase: AtualizarAdminUseCase
 
 ) {}
@@ -297,6 +298,18 @@ export class AdminController {
       const message = error.message || 'Erro inesperado ao atualizar administrador';
       res.status(400).json({ message });
     }
+  }async criar(req: Request, res: Response) {
+    try {
+
+      const result = await this.criarSolicitacaoColetaAdminUseCase.execute(req.body);
+      return res.status(201).json(result);
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      return res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
   }
+
   }
 

@@ -9,7 +9,7 @@ import pontoColetaRoutes from './infrastructure/http/routes/pontoColeta.routes';
 import adminRoutes from './infrastructure/http/routes/admin.routes';
 import parceiroIndicadorRoutes from './infrastructure/http/routes/parceiroIndicador.routes';
 import solicitacaoColeta from './infrastructure/http/routes/solicitacao.routes';
-
+import impactoAmbientalRoutes  from './infrastructure/http/routes/impactoAmbiental.routes';
 // Importação corrigida
 import { swaggerSpec } from './infrastructure/http/docs/swagger';
 
@@ -62,7 +62,7 @@ app.use('/pontos-coleta', pontoColetaRoutes);
 app.use('/admin', adminRoutes);
 app.use('/parceiros-indicadores', parceiroIndicadorRoutes);
 app.use('/solicitacoes-coleta', solicitacaoColeta);
-
+app.use('/impacto-ambiental', impactoAmbientalRoutes);
 app.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'ok',

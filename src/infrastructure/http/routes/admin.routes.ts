@@ -20,6 +20,9 @@ import { GetAlogadoUseCase } from '../../../domain/use-cases/admin/getUserAUseCa
 import { AdminManageUseCase } from '../../../domain/use-cases/admin/AdminManageUseCase';
 import { CriarParceiroUseCase } from '../../../domain/use-cases/parceiro/CriarParceiroUseCase';
 import { AtualizarAdminUseCase } from '../../../domain/use-cases/admin/AtualizarAdminUseCase';
+
+import { CriarSolicitacaoColetaAdminUseCase } from '../../../domain/use-cases/admin/CriarSolicitacaoColetaAdminUseCase';
+
 // Controllers
 import { AdminController } from '../controllers/AdminController';
 
@@ -38,7 +41,7 @@ const indicadorRepository = new DBScriptParceiroIndicadorRepository();
 // ===================== INSTANCIAR USE CASES =====================
 const loginAdminUseCase = new LoginAdminUseCase(adminRepository);
 const criarParceiroUseCase = new CriarParceiroUseCase(parceiroRepository, pontoColetaRepository);
-const atualizarAdminUseCase = new AtualizarAdminUseCase(adminRepository)
+const atualizarAdminUseCase = new AtualizarAdminUseCase(adminRepository);
 const atualizarStatusParceiroUseCase = new AtualizarStatusParceiroUseCase(
   parceiroRepository,
   pontoColetaRepository
@@ -65,14 +68,21 @@ const listarTodasSolicitacoesColetaUseCase = new ListarTodasSolicitacoesColetaUs
 );
 const getUser = new GetAlogadoUseCase(adminRepository);
 
-// ===== NOVO USE CASE DE GESTÃO (CRUD) =====
+// Use Cases para CRUD de Admins e Indicadores
 const adminManageUseCase = new AdminManageUseCase(
   adminRepository,
   parceiroRepository,
   indicadorRepository
 );
 
-// ===================== INSTANCIAR CONTROLLER =====================
+// ✅ USE CASE ADMIN PARA CRIAR SOLICITAÇÕES
+const criarSolicitacaoColetaAdminUseCase = new CriarSolicitacaoColetaAdminUseCase(
+  solicitacaoRepository,
+  pontoColetaRepository,
+  parceiroRepository
+);
+
+// ===================== INSTANCIAR CONTROLLERS =====================
 const adminController = new AdminController(
   loginAdminUseCase,
   atualizarStatusParceiroUseCase,
@@ -85,11 +95,11 @@ const adminController = new AdminController(
   getUser,
   adminManageUseCase,
   criarParceiroUseCase,
-  atualizarAdminUseCase
-
-
-  
+    criarSolicitacaoColetaAdminUseCase,
+    atualizarAdminUseCase
 );
+
+
 
 // =================================================================
 // ===================== ROTAS PÚBLICAS ============================
@@ -446,6 +456,47 @@ router.get('/solicitacoes-coleta', (req, res) => adminController.listarSolicitac
 
 /**
  * @swagger
+ * /admin/solicitacoes-coleta:
+ *   post:
+ *     summary: Cria uma nova solicitação de coleta (admin)
+ *     tags: [Admin - Solicitações]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pontoColetaId
+ *               - volumeInformado
+ *             properties:
+ *               pontoColetaId:
+ *                 type: integer
+ *                 description: ID do ponto de coleta
+ *               volumeInformado:
+ *                 type: number
+ *                 description: Volume informado em litros
+ *               observacoes:
+ *                 type: string
+ *                 description: Observações adicionais
+ *     responses:
+ *       201:
+ *         description: Solicitação criada com sucesso
+ *       400:
+ *         description: Erro de validação
+ *       401:
+ *         description: Não autenticado
+ *       403:
+ *         description: Acesso negado (não é admin)
+ */
+router.post('/solicitacoes-coleta', (req, res) => 
+  criarSolicitacaoColetaAdminUseCase.execute( req.body)
+);
+
+/**
+ * @swagger
  * /admin/solicitacoes-coleta/{id}/status:
  *   patch:
  *     summary: Atualiza o status de uma solicitação de coleta
@@ -541,8 +592,58 @@ router.patch('/solicitacoes-coleta/:id/status', (req, res) => adminController.at
  *       403:
  *         description: Acesso negado (não é admin)
  */
-router.post('/admins', AuthMiddleware.requireRole('admin'), (req, res) => adminController.criarAdmin(req, res));
+router.post('/admins', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.criarAdmin(req, res)
+);
 
+/**
+ * @swagger
+ * /admin/admins/{id}:
+ *   put:
+ *     summary: Atualiza um administrador existente (apenas admin)
+ *     tags: [Admin - Gestão de Admins]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID do administrador
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               senha:
+ *                 type: string
+ *                 format: password
+ *               nivelAcesso:
+ *                 type: string
+ *                 enum: [admin, gerente]
+ *     responses:
+ *       200:
+ *         description: Administrador atualizado com sucesso
+ *       400:
+ *         description: Dados inválidos ou email já em uso
+ *       404:
+ *         description: Administrador não encontrado
+ */
+router.put('/admins/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.atualizarAdmin(req, res)
+);
+
+// =================================================================
+// ===== CRUD - PARCEIROS =========================================
+// =================================================================
 
 /**
  * @swagger
@@ -603,7 +704,9 @@ router.post('/admins', AuthMiddleware.requireRole('admin'), (req, res) => adminC
  *       400:
  *         description: Dados inválidos ou email/documento já existente
  */
-router.post('/parceiros', AuthMiddleware.requireRole('admin'), (req, res) => adminController.criarParceiro(req, res));
+router.post('/parceiros', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.criarParceiro(req, res)
+);
 
 /**
  * @swagger
@@ -652,7 +755,9 @@ router.post('/parceiros', AuthMiddleware.requireRole('admin'), (req, res) => adm
  *       404:
  *         description: Parceiro não encontrado
  */
-router.put('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarParceiro(req, res));
+router.put('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.atualizarParceiro(req, res)
+);
 
 /**
  * @swagger
@@ -677,7 +782,9 @@ router.put('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
  *       404:
  *         description: Parceiro não encontrado
  */
-router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.excluirParceiro(req, res));
+router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.excluirParceiro(req, res)
+);
 
 // =================================================================
 // ===== CRUD - PARCEIROS INDICADORES ==============================
@@ -725,7 +832,9 @@ router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) 
  *       400:
  *         description: Dados inválidos ou CNPJ já existe
  */
-router.post('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => adminController.criarIndicador(req, res));
+router.post('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.criarIndicador(req, res)
+);
 
 /**
  * @swagger
@@ -745,7 +854,9 @@ router.post('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => a
  *               items:
  *                 $ref: '#/components/schemas/ParceiroIndicador'
  */
-router.get('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarIndicadoresAtivos(req, res));
+router.get('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.listarIndicadoresAtivos(req, res)
+);
 
 /**
  * @swagger
@@ -765,7 +876,9 @@ router.get('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => ad
  *               items:
  *                 $ref: '#/components/schemas/ParceiroIndicador'
  */
-router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res) => adminController.listarIndicadoresAtivos(req, res));
+router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.listarIndicadoresAtivos(req, res)
+);
 
 /**
  * @swagger
@@ -811,7 +924,9 @@ router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res
  *       404:
  *         description: Indicador não encontrado
  */
-router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarIndicador(req, res));
+router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.atualizarIndicador(req, res)
+);
 
 /**
  * @swagger
@@ -836,47 +951,8 @@ router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) =
  *       404:
  *         description: Indicador não encontrado
  */
-router.delete('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.excluirIndicador(req, res));
-/**
- * @swagger
- * /admin/admins/{id}:
- *   put:
- *     summary: Atualiza um administrador existente (apenas admin)
- *     tags: [Admin - Gestão de Admins]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do administrador
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               nome:
- *                 type: string
- *               email:
- *                 type: string
- *                 format: email
- *               senha:
- *                 type: string
- *                 format: password
- *               nivelAcesso:
- *                 type: string
- *                 enum: [admin, gerente]
- *     responses:
- *       200:
- *         description: Administrador atualizado com sucesso
- *       400:
- *         description: Dados inválidos ou email já em uso
- *       404:
- *         description: Administrador não encontrado
- */
-router.put('/admins/:id', AuthMiddleware.requireRole('admin'), (req, res) => adminController.atualizarAdmin(req, res));
+router.delete('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
+  adminController.excluirIndicador(req, res)
+);
+
 export default router;
