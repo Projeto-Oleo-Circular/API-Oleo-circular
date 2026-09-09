@@ -250,5 +250,10 @@ router.put(
  *         description: Ponto de coleta não encontrado
  */
 router.get('/:id', (req, res) => pontoColetaController.findById(req, res));
-
+router.post(
+  '/admin', 
+  AuthMiddleware.verify,
+  AuthMiddleware.requireRole('admin'),
+  (req, res) => pontoColetaController.create(req, res)
+);
 export default router;

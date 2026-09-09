@@ -31,7 +31,7 @@ export const CriarPontoColetaDTOSchema = z.object({
   estado: z.string().length(2).optional(),
   complemento: z.string().optional(),
   expectativaGeracao: z.number().optional(),
-  capacidadeBombona: z.number().positive(),
+  capacidadeBombona: z.number().positive().optional(),
   nivelAtualPct: z.number().min(0).max(100).optional(),
   statusBombona: z.enum([
     'VAZIA',

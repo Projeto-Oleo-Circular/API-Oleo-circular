@@ -12,9 +12,10 @@ export class CriarPontoColetaUseCase {
     private readonly pontoColetaRepository: IPontoColetaRepository,
   ) {}
 
-  async execute(input: CriarPontoColetaDTO) {
-    // 1. Validação do DTO usando Zod
-    const parsed = CriarPontoColetaDTOSchema.safeParse(input);
+  async execute(input: CriarPontoColetaDTO & { statusAprovacaoPontoColeta?: 'PENDENTE' | 'APROVADO' }) {
+    const { statusAprovacaoPontoColeta, ...dtoInput } = input;
+
+    const parsed = CriarPontoColetaDTOSchema.safeParse(dtoInput);
 
     if (!parsed.success) {
       throw new Error(
@@ -24,7 +25,8 @@ export class CriarPontoColetaUseCase {
 
     const data = parsed.data;
 
-    // 2. Montagem do objeto omitindo 'id' e 'criadoEm', pois o DB cuida disso
+    const statusInicial = statusAprovacaoPontoColeta ?? 'PENDENTE';
+
     const pontoColetaParaCriar: Omit<PontoColeta, 'id' | 'criadoEm'> = {
       parceiroId: data.parceiroId,
       nomePontoColeta: data.nomePontoColeta ?? `Ponto Secundário`,
@@ -36,16 +38,15 @@ export class CriarPontoColetaUseCase {
       cidade: data.cidade,
       estado: data.estado,
       complemento: data.complemento,
-      capacidadeBombona: data.capacidadeBombona,
+      capacidadeBombona: data.capacidadeBombona ?? 0,
       expectativaGeracao: data.expectativaGeracao,
       nivelAtualPct: data.nivelAtualPct ?? 0,
       statusBombona: data.statusBombona ?? 'VAZIA',
-      statusAprovacaoPontoColeta: 'PENDENTE',
+      statusAprovacaoPontoColeta: statusInicial,
       longitude: String(data.longitude),
-      latitude:String(data.latitude)
+      latitude: String(data.latitude)
     };
 
-    // 3. Persistência
     const result = await this.pontoColetaRepository.create(pontoColetaParaCriar);
     const categoriaLabel = getCategoriaPontoColetaLabel(result.categoria);
 

@@ -29,6 +29,9 @@ export class CriarParceiroUseCase {
 
     const senhaHash = await bcrypt.hash(data.senha, 10);
 
+    const criadoPorAdmin = data.comoConheceu === 'Criado pelo Administrador';
+    const statusInicial = criadoPorAdmin ? 'APROVADO' : 'PENDENTE';
+
     let parceiroData: any;
 
     if (tipoPessoa === 'FISICA') {
@@ -47,7 +50,7 @@ export class CriarParceiroUseCase {
         outroParceiro: data.outroParceiro ?? null, 
         comoConheceu: data.comoConheceu ?? null,   
         observacao: data.observacao ?? null,     
-        statusAprovacaoParceiro: 'PENDENTE',
+        statusAprovacaoParceiro: statusInicial,
       };
     } else {
       parceiroData = {
@@ -65,7 +68,7 @@ export class CriarParceiroUseCase {
         outroParceiro: data.outroParceiro ?? null, 
         comoConheceu: data.comoConheceu ?? null,  
         observacao: data.observacao ?? null,       
-        statusAprovacaoParceiro: 'PENDENTE',
+        statusAprovacaoParceiro: statusInicial,
         responsavelLegal: data.responsavelLegal,
       };
     }
@@ -90,7 +93,7 @@ export class CriarParceiroUseCase {
       expectativaGeracao: data.expectativaGeracao ?? 0,
       nivelAtualPct: data.nivelAtualPct ?? 0,
       statusBombona: 'VAZIA',
-      statusAprovacaoPontoColeta: 'PENDENTE',
+      statusAprovacaoPontoColeta: statusInicial, 
       nomePontoColeta: `Ponto ${data.razaoSocial}`,
       longitude: String(data.longitude),
       latitude: String(data.latitude),
@@ -98,13 +101,16 @@ export class CriarParceiroUseCase {
 
     await this.pontoColetaRepository.create(pontoColetaData);
 
-    this.enviarEmailConfirmacao(parceiro).catch((err) => {
-      console.error('Erro ao enviar e-mail:', err);
-    });
+    if (statusInicial === 'PENDENTE') {
+      this.enviarEmailConfirmacao(parceiro).catch((err) => {
+        console.error('Erro ao enviar e-mail:', err);
+      });
+    }
 
     return {
-      mensagem:
-        'Cadastro realizado com sucesso! Aguarde a aprovação da equipe.',
+      mensagem: criadoPorAdmin
+        ? 'Parceiro cadastrado e aprovado com sucesso!'
+        : 'Cadastro realizado com sucesso! Aguarde a aprovação da equipe.',
     };
   }
 
@@ -140,8 +146,6 @@ export class CriarParceiroUseCase {
     if (tipoPessoa === 'JURIDICA' && documento.getTipo() !== 'CNPJ') {
       throw new Error('Pessoa Jurídica deve ter um CNPJ como documento.');
     }
-
-   
   }
 
   private determinarCapacidade(porte: string): number {

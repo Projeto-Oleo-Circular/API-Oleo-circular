@@ -52,11 +52,15 @@ export class PontoColetaController {
     }
   }
 
-  async create(req: Request, res: Response): Promise<void> {
+async create(req: Request, res: Response): Promise<void> {
     try {
+
+      const parceiroIdAlvo = req.body.parceiroId ?? req.user?.id;
+
       const dados = {
         ...req.body,
-        parceiroId: req.user?.id,
+        parceiroId: parceiroIdAlvo ? Number(parceiroIdAlvo) : undefined,
+        statusAprovacaoPontoColeta: 'APROVADO',
       };
 
       const result = await this.criarPontoColetaUseCase.execute(dados);
@@ -70,9 +74,10 @@ export class PontoColetaController {
   async update(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const parceiroId = req.user?.id;
+      const userId = req.user?.id;
+      const userRole = req.user?.tipo; 
 
-      if (!parceiroId) {
+      if (!userId) {
         res.status(401).json({ message: 'Usuário não autenticado' });
         return;
       }
@@ -82,9 +87,19 @@ export class PontoColetaController {
         return;
       }
 
+     
+      let parceiroIdParaUso = Number(userId);
+
+      if (userRole === 'admin') {
+        const pontoExistente = await this.pontoColetaRepository.findById(Number(id));
+        if (pontoExistente) {
+          parceiroIdParaUso = pontoExistente.parceiroId; 
+        }
+      }
+
       const input = {
         id: isNaN(Number(id)) ? id : Number(id),
-        parceiroId: Number(parceiroId),
+        parceiroId: parceiroIdParaUso,
         ...req.body,
       };
 
@@ -124,20 +139,15 @@ export class PontoColetaController {
     }
   }
 
-  // ============================================
-  // NOVO MÉTODO PÚBLICO - USANDO findAll()
-  // ============================================
+
   async listarPublicos(req: Request, res: Response): Promise<void> {
     try {
-      // 1. Busca TODOS os pontos usando findAll() do repository
       const todosPontos = await this.pontoColetaRepository.findAll();
       
-      // 2. Filtra apenas os APROVADOS
       let pontosFiltrados = todosPontos.filter(
         (ponto) => ponto.statusAprovacaoPontoColeta === 'APROVADO'
       );
 
-      // 3. Aplica filtros adicionais (categoria e search)
       const { categoria, search } = req.query;
 
       if (categoria) {
@@ -163,7 +173,6 @@ export class PontoColetaController {
         });
       }
 
-      // 4. Paginação
       const page = Math.max(1, Number(req.query.page) || 1);
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
       const start = (page - 1) * limit;
@@ -171,12 +180,10 @@ export class PontoColetaController {
       
       const itemsPaginados = pontosFiltrados.slice(start, end);
 
-      // 5. FILTRA DADOS SENSÍVEIS - Retorna apenas o que é público
       const dadosPublicos = itemsPaginados.map((ponto) => 
         this.filtrarDadosPublicos(ponto)
       );
 
-      // 6. Resposta
       res.status(200).json({
         items: dadosPublicos,
         total: pontosFiltrados.length,
