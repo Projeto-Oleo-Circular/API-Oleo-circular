@@ -1,7 +1,7 @@
 import { Parceiro } from '../../domain/entities/Parceiro';
 import { IParceiroRepository } from '../../domain/repositories/IParceiroRepository';
 import { pool } from '../../shared/config/db';
-
+import { PoolClient } from "pg";
 export class DBScriptParceiroRepository implements IParceiroRepository {
   private async obterOuCriarParceiroIndicador(
     nomeOutroParceiro: string
@@ -42,144 +42,303 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
     return novoIndicador.rows[0].id;
   }
 
+  private async obterOuCriarIndicadorAdmin(
+  client: PoolClient
+): Promise<number> {
+  const nomeIndicador = "Admin/Cataunidos";
+
+  const existente = await client.query<{ id: number }>(
+    `
+      SELECT id
+      FROM parceiros_indicadores
+      WHERE LOWER(nome) = LOWER($1)
+      LIMIT 1
+    `,
+    [nomeIndicador]
+  );
+
+  if (existente.rows.length > 0) {
+    return existente.rows[0].id;
+  }
+
+  const criado = await client.query<{ id: number }>(
+    `
+      INSERT INTO parceiros_indicadores (
+        nome,
+        tipo,
+        ativo
+      )
+      VALUES (
+        $1,
+        $2,
+        true
+      )
+      RETURNING id
+    `,
+    [
+      nomeIndicador,
+      "ADMIN",
+    ]
+  );
+
+  return criado.rows[0].id;
+}
+
   async create(data: any): Promise<Parceiro> {
-    const client = await pool.connect();
+  const client = await pool.connect();
 
-    try {
-      await client.query('BEGIN');
+  try {
+    await client.query("BEGIN");
 
-      let parceiroIndicadorIdFinal =
-        data.parceiroIndicadorId ?? null;
+    /*
+     * =====================================================
+     * PARCEIRO INDICADOR
+     * =====================================================
+     */
 
-      if (
-        !parceiroIndicadorIdFinal &&
-        data.outroParceiro &&
-        data.outroParceiro.trim()
-      ) {
-        const nomeFormatado = data.outroParceiro.trim();
+    let parceiroIndicadorIdFinal: number | null = null;
 
-        const existente = await client.query<{ id: number }>(
+    if (data.criadoPorAdmin === true) {
+      parceiroIndicadorIdFinal =
+        await this.obterOuCriarIndicadorAdmin(client);
+    } else if (
+      data.parceiroIndicadorId !== undefined &&
+      data.parceiroIndicadorId !== null &&
+      String(data.parceiroIndicadorId).trim() !== ""
+    ) {
+      parceiroIndicadorIdFinal = Number(data.parceiroIndicadorId);
+    }
+
+    /*
+     * Caso o usuário tenha informado manualmente
+     * outro parceiro indicador.
+     */
+    if (
+      data.criadoPorAdmin !== true &&
+      !parceiroIndicadorIdFinal &&
+      typeof data.outroParceiro === "string" &&
+      data.outroParceiro.trim()
+    ) {
+      const nomeFormatado =
+        data.outroParceiro.trim();
+
+      /*
+       * Verifica primeiro se já existe.
+       */
+      const existente =
+        await client.query<{ id: number }>(
           `
-          SELECT id
-          FROM parceiros_indicadores
-          WHERE nome ILIKE $1
-          LIMIT 1
+            SELECT id
+            FROM parceiros_indicadores
+            WHERE nome ILIKE $1
+            LIMIT 1
           `,
           [nomeFormatado]
         );
 
-        if (existente.rows.length > 0) {
-          parceiroIndicadorIdFinal =
-            existente.rows[0].id;
-        } else {
-          const novoIndicador =
-            await client.query<{ id: number }>(
-              `
+      if (existente.rows.length > 0) {
+        parceiroIndicadorIdFinal =
+          existente.rows[0].id;
+      } else {
+        /*
+         * Cria um novo indicador.
+         */
+        const novoIndicador =
+          await client.query<{ id: number }>(
+            `
               INSERT INTO parceiros_indicadores (
                 nome,
                 tipo,
                 ativo
               )
-              VALUES ($1, $2, $3)
+              VALUES (
+                $1,
+                $2,
+                $3
+              )
               RETURNING id
-              `,
-              [
-                nomeFormatado,
-                'OUTRO',
-                true,
-              ]
-            );
+            `,
+            [
+              nomeFormatado,
+              "OUTRO",
+              true,
+            ]
+          );
 
-          parceiroIndicadorIdFinal =
-            novoIndicador.rows[0].id;
-        }
+        parceiroIndicadorIdFinal =
+          novoIndicador.rows[0].id;
       }
+    }
 
-      const result = await client.query(
+    /*
+     * =====================================================
+     * REDES SOCIAIS
+     * =====================================================
+     *
+     * A coluna no PostgreSQL é JSON/JSONB.
+     *
+     * O pg NÃO deve receber diretamente:
+     *
+     * [
+     *   "facebook: @teste",
+     *   "instagram: @teste"
+     * ]
+     *
+     * Para uma coluna JSON precisamos serializar.
+     */
+
+    let redesSociaisJson = "[]";
+
+    if (Array.isArray(data.redesSociais)) {
+      redesSociaisJson = JSON.stringify(
+        data.redesSociais
+      );
+    } else if (
+      typeof data.redesSociais === "string"
+    ) {
+      /*
+       * Compatibilidade com versões antigas do frontend.
+       */
+      const rede =
+        data.redesSociais.trim();
+
+      redesSociaisJson = JSON.stringify(
+        rede ? [rede] : []
+      );
+    }
+
+    /*
+     * =====================================================
+     * INSERT PARCEIRO
+     * =====================================================
+     */
+
+    const comoConheceuFinal =
+      data.criadoPorAdmin === true
+        ? 'Criado pelo Administrador'
+        : typeof data.comoConheceu === 'string' && data.comoConheceu.trim()
+          ? data.comoConheceu.trim()
+          : null;
+
+    const result =
+      await client.query(
         `
-        INSERT INTO parceiros (
-          tipo_pessoa,
-          tipo_parceiro,
-          razao_social,
-          nome,
-          email,
-          senha_hash,
-          documento,
-          telefone,
-          responsavel_legal,
-          aceite_marketing,
-          parceiro_indicador_id,
-          como_conheceu,
-          observacao,
-          status_aprovacao_parceiro,
-          redes_sociais
-        )
-        VALUES (
-          $1,
-          $2,
-          $3,
-          $4,
-          $5,
-          $6,
-          $7,
-          $8,
-          $9,
-          $10,
-          $11,
-          $12,
-          $13,
-          $14,
-          $15
-        )
-        RETURNING *
+          INSERT INTO parceiros (
+            tipo_pessoa,
+            tipo_parceiro,
+            razao_social,
+            nome,
+            email,
+            senha_hash,
+            documento,
+            telefone,
+            responsavel_legal,
+            aceite_marketing,
+            parceiro_indicador_id,
+            como_conheceu,
+            observacao,
+            status_aprovacao_parceiro,
+            redes_sociais
+          )
+          VALUES (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $12,
+            $13,
+            $14,
+            $15::jsonb
+          )
+          RETURNING *
         `,
         [
           data.tipoPessoa,
+
           data.tipoParceiro,
+
           data.razaoSocial,
+
           data.nome,
+
           data.email,
+
           data.senhaHash,
+
           data.documento,
+
           data.telefone,
-          data.responsavelLegal,
-          data.aceiteMarketing,
+
+          data.responsavelLegal ?? null,
+
+          Boolean(data.aceiteMarketing),
+
           parceiroIndicadorIdFinal,
-          data.comoConheceu ?? null,
-          data.observacao ?? null,
-          data.statusAprovacaoParceiro ?? 'PENDENTE',
-          data.redesSociais ?? [],
+
+          comoConheceuFinal,
+
+          data.observacao?.trim()
+            ? data.observacao.trim()
+            : null,
+
+          data.statusAprovacaoParceiro ??
+            "PENDENTE",
+
+          /*
+           * IMPORTANTE:
+           *
+           * JSON.stringify foi feito acima.
+           */
+          redesSociaisJson,
         ]
       );
 
-      await client.query('COMMIT');
+    await client.query("COMMIT");
 
-      return this.mapToEntity(result.rows[0]);
-    } catch (error) {
-      await client.query('ROLLBACK');
+    return this.mapToEntity(
+      result.rows[0]
+    );
+  } catch (error) {
+    await client.query("ROLLBACK");
 
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Erro inesperado ao criar parceiro';
+    console.error(
+      "Erro no repository ao criar parceiro:",
+      error
+    );
 
-      throw new Error(
-        `Erro ao criar parceiro: ${message}`
-      );
-    } finally {
-      client.release();
-    }
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Erro inesperado ao criar parceiro";
+
+    throw new Error(
+      `Erro ao criar parceiro: ${message}`
+    );
+  } finally {
+    client.release();
   }
-
+}
   async findByEmail(
     email: string
   ): Promise<Parceiro | null> {
     try {
       const result = await pool.query(
         `
-        SELECT *
-        FROM parceiros
-        WHERE email = $1
+        SELECT
+          p.*,
+          pi.id AS parceiro_indicador_join_id,
+          pi.nome AS parceiro_indicador_nome
+        FROM parceiros p
+        LEFT JOIN parceiros_indicadores pi
+          ON pi.id = p.parceiro_indicador_id
+        WHERE p.email = $1
         LIMIT 1
         `,
         [email]
@@ -208,9 +367,14 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
     try {
       const result = await pool.query(
         `
-        SELECT *
-        FROM parceiros
-        WHERE id = $1
+        SELECT
+          p.*,
+          pi.id AS parceiro_indicador_join_id,
+          pi.nome AS parceiro_indicador_nome
+        FROM parceiros p
+        LEFT JOIN parceiros_indicadores pi
+          ON pi.id = p.parceiro_indicador_id
+        WHERE p.id = $1
         LIMIT 1
         `,
         [id]
@@ -239,9 +403,14 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
     try {
       const result = await pool.query(
         `
-        SELECT *
-        FROM parceiros
-        WHERE documento = $1
+        SELECT
+          p.*,
+          pi.id AS parceiro_indicador_join_id,
+          pi.nome AS parceiro_indicador_nome
+        FROM parceiros p
+        LEFT JOIN parceiros_indicadores pi
+          ON pi.id = p.parceiro_indicador_id
+        WHERE p.documento = $1
         LIMIT 1
         `,
         [documento]
@@ -331,11 +500,11 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
 
       if (data.redesSociais !== undefined) {
         fields.push(
-          `redes_sociais = $${index++}`
+          `redes_sociais = $${index++}::jsonb`
         );
 
         values.push(
-          data.redesSociais
+          JSON.stringify(data.redesSociais ?? [])
         );
       }
 
@@ -523,9 +692,14 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
     try {
       const result = await pool.query(
         `
-        SELECT *
-        FROM parceiros
-        WHERE status_aprovacao_parceiro = $1
+        SELECT
+          p.*,
+          pi.id AS parceiro_indicador_join_id,
+          pi.nome AS parceiro_indicador_nome
+        FROM parceiros p
+        LEFT JOIN parceiros_indicadores pi
+          ON pi.id = p.parceiro_indicador_id
+        WHERE p.status_aprovacao_parceiro = $1
         `,
         [status]
       );
@@ -549,9 +723,14 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
     try {
       const result = await pool.query(
         `
-        SELECT *
-        FROM parceiros
-        ORDER BY criado_em DESC
+        SELECT
+          p.*,
+          pi.id AS parceiro_indicador_join_id,
+          pi.nome AS parceiro_indicador_nome
+        FROM parceiros p
+        LEFT JOIN parceiros_indicadores pi
+          ON pi.id = p.parceiro_indicador_id
+        ORDER BY p.criado_em DESC
         `
       );
 
@@ -648,6 +827,15 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
         data.aceite_marketing,
       parceiroIndicadorId:
         data.parceiro_indicador_id,
+      parceiroIndicador:
+        data.parceiro_indicador_join_id
+          ? {
+              id: data.parceiro_indicador_join_id,
+              nome: data.parceiro_indicador_nome,
+            }
+          : null,
+      outroParceiro:
+        data.outro_parceiro ?? null,
       comoConheceu:
         data.como_conheceu,
       observacao:

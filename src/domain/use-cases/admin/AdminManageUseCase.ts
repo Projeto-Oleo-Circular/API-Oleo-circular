@@ -130,7 +130,7 @@ export class AdminManageUseCase {
 //   }
 
   async listarIndicadoresAtivos(): Promise<ParceiroIndicador[]> {
-    return await this.indicadorRepo.findAllAtivos();
+    return await this.indicadorRepo.findAll();
   }
 
   async buscarIndicadorPorId(id: number): Promise<ParceiroIndicador | null> {

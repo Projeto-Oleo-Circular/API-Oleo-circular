@@ -16,6 +16,7 @@ export interface Parceiro {
   criadoEm: string;
   tipoPessoa: null;
   responsavelLegal: string
+  
 
 }
 
