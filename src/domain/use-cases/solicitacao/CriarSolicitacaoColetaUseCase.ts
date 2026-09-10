@@ -22,29 +22,29 @@ export class CriarSolicitacaoColetaUseCase {
   ) {}
 
   async execute(
-    parceiroLogadoId: number,
-    data: CriarSolicitacaoColetaDTO
-  ) {
-    const parsed = CriarSolicitacaoColetaDTOSchema.safeParse(data);
+  usuarioLogadoId: number,
+  data: CriarSolicitacaoColetaDTO,
+  isAdmin = false, 
+) {
+  const parsed = CriarSolicitacaoColetaDTOSchema.safeParse(data);
 
-    if (!parsed.success) {
-      throw new Error(
-        parsed.error.issues.map((issue) => issue.message).join(', ')
-      );
-    }
+  if (!parsed.success) {
+    throw new Error(
+      parsed.error.issues.map((issue) => issue.message).join(', ')
+    );
+  }
 
-    const { pontoColetaId, volumeInformado, observacoes } = parsed.data;
+  const { pontoColetaId, volumeInformado, observacoes } = parsed.data;
 
-    const pontoColeta = await this.pontoColetaRepository.findById(pontoColetaId);
+  const pontoColeta = await this.pontoColetaRepository.findById(pontoColetaId);
 
-    if (!pontoColeta) {
-      throw new Error('Ponto de coleta não encontrado.');
-    }
+  if (!pontoColeta) {
+    throw new Error('Ponto de coleta não encontrado.');
+  }
 
-    if (Number(pontoColeta.parceiroId) !== Number(parceiroLogadoId)) {
-      throw new Error('Este ponto de coleta não pertence ao parceiro logado.');
-    }
-
+   if (!isAdmin && Number(pontoColeta.parceiroId) !== Number(usuarioLogadoId)) {
+    throw new Error('Este ponto de coleta não pertence ao parceiro logado.');
+  }
     const solicitacaoAtiva = await this.solicitacaoRepository.findAtivaByPontoColetaId(pontoColetaId);
 
     if (solicitacaoAtiva) {

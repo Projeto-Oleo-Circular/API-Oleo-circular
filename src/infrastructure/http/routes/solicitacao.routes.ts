@@ -88,7 +88,7 @@ const solicitacaoController = new SolicitacaoColetaController(
 router.post(
   '/',
   AuthMiddleware.verify,
-  AuthMiddleware.requireRole('parceiro'),
+  AuthMiddleware.requireRole('parceiro', 'admin'),
   (req, res) => solicitacaoController.criar(req, res),
 );
 

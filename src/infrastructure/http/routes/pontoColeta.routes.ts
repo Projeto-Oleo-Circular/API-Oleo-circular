@@ -221,7 +221,7 @@ router.post(
 router.put(
   '/:id',
   AuthMiddleware.verify,
-  AuthMiddleware.requireRole('parceiro'),
+  AuthMiddleware.requireRole('parceiro', 'admin'),
   (req, res) => pontoColetaController.update(req, res)
 );
 
