@@ -25,9 +25,20 @@ export class CriarPontoColetaUseCase {
 
     const data = parsed.data;
 
-    const statusInicial = statusAprovacaoPontoColeta ?? 'PENDENTE';
+   
+    const pontosExistentes = await this.pontoColetaRepository.findByParceiroId(data.parceiroId);
 
-    const pontoColetaParaCriar: Omit<PontoColeta, 'id' | 'criadoEm'> = {
+    const jaPossuiPontoAprovado = pontosExistentes.some(
+      (ponto) => ponto.statusAprovacaoPontoColeta === 'APROVADO'
+    );
+
+    let statusInicial = statusAprovacaoPontoColeta ?? 'PENDENTE';
+    
+    if (jaPossuiPontoAprovado) {
+      statusInicial = 'PENDENTE';
+    }
+
+    const pontoColetaParaCriar: Omit<PontoColeta, 'id'> = {
       parceiroId: data.parceiroId,
       nomePontoColeta: data.nomePontoColeta ?? `Ponto Secundário`,
       categoria: data.categoria,
@@ -42,7 +53,7 @@ export class CriarPontoColetaUseCase {
       expectativaGeracao: data.expectativaGeracao,
       nivelAtualPct: data.nivelAtualPct ?? 0,
       statusBombona: data.statusBombona ?? 'VAZIA',
-      statusAprovacaoPontoColeta: statusInicial,
+      statusAprovacaoPontoColeta: statusInicial, // Aplica a regra de negócio
       longitude: String(data.longitude),
       latitude: String(data.latitude)
     };

@@ -30,7 +30,7 @@ export class AtualizarAdminUseCase {
       dadosAtualizados.email = data.email;
     }
 
-    // 🛡️ VALIDAÇÃO DE SEGURANÇA: TROCA DE SENHA
+    //  VALIDAÇÃO DE SEGURANÇA: TROCA DE SENHA
     if (data.novaSenha && data.novaSenha.trim() !== '') {
       if (!data.senhaAtual) {
         throw new Error('Para alterar a senha, você precisa informar a senha atual.');
