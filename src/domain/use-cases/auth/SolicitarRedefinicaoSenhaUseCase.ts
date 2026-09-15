@@ -33,7 +33,6 @@ export class SolicitarRedefinicaoSenhaUseCase {
     });
 
     const resetLink = `${process.env.FRONTEND_URL}redefinir-senha?token=${token}`;
-    console.log(resetLink)
     const nomeParceiro = parceiro.nome || parceiro.razaoSocial || 'Parceiro';
 
     const template = redefinirSenhaParceiroTemplate({
