@@ -94,7 +94,7 @@ export class CriarParceiroUseCase {
       nivelAtualPct: data.nivelAtualPct ?? 0,
       statusBombona: 'VAZIA',
       statusAprovacaoPontoColeta: statusInicial, 
-      nomePontoColeta: `Ponto ${data.razaoSocial}`,
+      nomePontoColeta: `Ponto ${data.nome}`,
       longitude: String(data.longitude),
       latitude: String(data.latitude),
     };
