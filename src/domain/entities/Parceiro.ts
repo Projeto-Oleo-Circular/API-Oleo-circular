@@ -15,7 +15,10 @@ export interface Parceiro {
   tipoPorte?: 'PEQUENO' | 'MEDIO' | 'GRANDE';
   criadoEm: string;
   tipoPessoa: null;
-  responsavelLegal: string
+  responsavelLegal: string;
+  indicadorOrigemId?: number | null;
+  primeiroAcesso?: boolean;
+  
   
 
 }

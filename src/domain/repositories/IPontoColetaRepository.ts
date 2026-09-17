@@ -13,5 +13,8 @@ export interface IPontoColetaRepository {
   ): Promise<PontoColeta>;
   findAll(): Promise<PontoColeta[]>;
   delete(id: number): Promise<void>;
+  findByParceiroId(
+  parceiroId: number
+): Promise<PontoColeta[]>;
 
 }

@@ -72,10 +72,10 @@ const getUser = new GetAlogadoUseCase(adminRepository);
 const adminManageUseCase = new AdminManageUseCase(
   adminRepository,
   parceiroRepository,
-  indicadorRepository
+  indicadorRepository,
+  pontoColetaRepository
 );
 
-// ✅ USE CASE ADMIN PARA CRIAR SOLICITAÇÕES
 const criarSolicitacaoColetaAdminUseCase = new CriarSolicitacaoColetaAdminUseCase(
   solicitacaoRepository,
   pontoColetaRepository,
@@ -642,151 +642,6 @@ router.put('/admins/:id', AuthMiddleware.requireRole('admin'), (req, res) =>
 );
 
 // =================================================================
-// ===== CRUD - PARCEIROS =========================================
-// =================================================================
-
-/**
- * @swagger
- * /admin/parceiros:
- *   post:
- *     summary: Cria um novo parceiro (admin ou gerente)
- *     tags: [Admin - Gestão de Parceiros]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - senha
- *               - documento
- *               - razaoSocial
- *               - nome
- *               - tipoParceiro
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               senha:
- *                 type: string
- *                 format: password
- *               documento:
- *                 type: string
- *               razaoSocial:
- *                 type: string
- *               nome:
- *                 type: string
- *               telefone:
- *                 type: string
- *               tipoParceiro:
- *                 type: string
- *                 enum: [INSTITUCIONAL, COMUNITARIO, SOLIDARIO]
- *               statusAprovacaoParceiro:
- *                 type: string
- *                 enum: [PENDENTE, APROVADO, REJEITADO]
- *                 default: PENDENTE
- *               parceiroIndicadorId:
- *                 type: integer
- *               redesSociais:
- *                 type: array
- *                 items:
- *                   type: string
- *               responsavelLegal:
- *                 type: string
- *               aceiteMarketing:
- *                 type: boolean
- *     responses:
- *       201:
- *         description: Parceiro criado com sucesso
- *       400:
- *         description: Dados inválidos ou email/documento já existente
- */
-router.post('/parceiros', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.criarParceiro(req, res)
-);
-
-/**
- * @swagger
- * /admin/parceiros/{id}:
- *   put:
- *     summary: Atualiza um parceiro (admin ou gerente)
- *     tags: [Admin - Gestão de Parceiros]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do parceiro
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               razaoSocial:
- *                 type: string
- *               nome:
- *                 type: string
- *               telefone:
- *                 type: string
- *               statusAprovacaoParceiro:
- *                 type: string
- *                 enum: [PENDENTE, APROVADO, REJEITADO]
- *               parceiroIndicadorId:
- *                 type: integer
- *               redesSociais:
- *                 type: array
- *                 items:
- *                   type: string
- *               responsavelLegal:
- *                 type: string
- *               aceiteMarketing:
- *                 type: boolean
- *     responses:
- *       200:
- *         description: Parceiro atualizado com sucesso
- *       404:
- *         description: Parceiro não encontrado
- */
-router.put('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.atualizarParceiro(req, res)
-);
-
-/**
- * @swagger
- * /admin/parceiros/{id}:
- *   delete:
- *     summary: Exclui um parceiro (apenas admin)
- *     tags: [Admin - Gestão de Parceiros]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do parceiro
- *     responses:
- *       204:
- *         description: Parceiro excluído com sucesso
- *       403:
- *         description: Acesso negado (não é admin)
- *       404:
- *         description: Parceiro não encontrado
- */
-router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.excluirParceiro(req, res)
-);
-
-// =================================================================
 // ===== CRUD - PARCEIROS INDICADORES ==============================
 // =================================================================
 
@@ -794,7 +649,7 @@ router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) 
  * @swagger
  * /admin/indicadores:
  *   post:
- *     summary: Cria um novo parceiro indicador (admin ou gerente)
+ *     summary: Cria um parceiro indicador
  *     tags: [Admin - Gestão de Indicadores]
  *     security:
  *       - bearerAuth: []
@@ -811,9 +666,14 @@ router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) 
  *             properties:
  *               nome:
  *                 type: string
+ *               nomeResposavel:
+ *                 type: string
  *               tipo:
  *                 type: string
- *                 enum: [ASSOCIACAO, COOPERATIVA, ONG]
+ *                 enum:
+ *                   - ASSOCIACAO
+ *                   - COOPERATIVA
+ *                   - ONG
  *               cnpj:
  *                 type: string
  *               email:
@@ -823,6 +683,8 @@ router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) 
  *                 type: string
  *               site:
  *                 type: string
+ *               municipio:
+ *                 type: string
  *               ativo:
  *                 type: boolean
  *                 default: true
@@ -830,61 +692,67 @@ router.delete('/parceiros/:id', AuthMiddleware.requireRole('admin'), (req, res) 
  *       201:
  *         description: Indicador criado com sucesso
  *       400:
- *         description: Dados inválidos ou CNPJ já existe
+ *         description: Dados inválidos
  */
-router.post('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.criarIndicador(req, res)
+router.post(
+  '/indicadores',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.criarIndicador(req, res)
 );
+
 
 /**
  * @swagger
  * /admin/indicadores:
  *   get:
- *     summary: Lista todos os parceiros indicadores (admin ou gerente)
+ *     summary: Lista parceiros indicadores
+ *     description: Retorna os indicadores e informa se possuem Parceiro Local e ponto de coleta.
  *     tags: [Admin - Gestão de Indicadores]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de indicadores
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/ParceiroIndicador'
  */
-router.get('/indicadores', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.listarIndicadoresAtivos(req, res)
+router.get(
+  '/indicadores',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.listarIndicadoresAtivos(req, res)
 );
+
 
 /**
  * @swagger
  * /admin/indicadores/ativos:
  *   get:
- *     summary: Lista apenas os indicadores ativos (admin ou gerente)
+ *     summary: Lista parceiros indicadores ativos
  *     tags: [Admin - Gestão de Indicadores]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Lista de indicadores ativos
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/ParceiroIndicador'
  */
-router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.listarIndicadoresAtivos(req, res)
+router.get(
+  '/indicadores/ativos',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.listarIndicadoresAtivos(req, res)
 );
+
+
+// ================================================================
+// IMPORTANTE:
+// esta rota deve vir ANTES de /indicadores/:id
+// ================================================================
 
 /**
  * @swagger
- * /admin/indicadores/{id}:
- *   put:
- *     summary: Atualiza um parceiro indicador (admin ou gerente)
+ * /admin/indicadores/{id}/pontos:
+ *   get:
+ *     summary: Lista os pontos de coleta de um parceiro indicador
  *     tags: [Admin - Gestão de Indicadores]
  *     security:
  *       - bearerAuth: []
@@ -894,7 +762,146 @@ router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do indicador
+ *     responses:
+ *       200:
+ *         description: Pontos encontrados
+ *       404:
+ *         description: Indicador não encontrado
+ */
+router.get(
+  '/indicadores/:id/pontos',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.listarPontosIndicador(req, res)
+);
+
+
+/**
+ * @swagger
+ * /admin/indicadores/{id}/pontos:
+ *   post:
+ *     summary: Cria um ponto para o parceiro indicador
+ *     description: >
+ *       Caso ainda não exista um Parceiro Local associado ao indicador,
+ *       cria automaticamente o Parceiro Local, gera uma senha temporária
+ *       e depois cria o ponto de coleta.
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cep
+ *               - logradouro
+ *               - numero
+ *               - bairro
+ *               - cidade
+ *               - estado
+ *               - capacidadeBombona
+ *               - nomePontoColeta
+ *               - latitude
+ *               - longitude
+ *             properties:
+ *               nomePontoColeta:
+ *                 type: string
+ *               cep:
+ *                 type: string
+ *               logradouro:
+ *                 type: string
+ *               numero:
+ *                 type: string
+ *               bairro:
+ *                 type: string
+ *               cidade:
+ *                 type: string
+ *               estado:
+ *                 type: string
+ *               complemento:
+ *                 type: string
+ *               capacidadeBombona:
+ *                 type: number
+ *               expectativaGeracao:
+ *                 type: number
+ *               nivelAtualPct:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *               latitude:
+ *                 oneOf:
+ *                   - type: number
+ *                   - type: string
+ *               longitude:
+ *                 oneOf:
+ *                   - type: number
+ *                   - type: string
+ *     responses:
+ *       201:
+ *         description: Ponto criado com sucesso
+ *       400:
+ *         description: Dados inválidos
+ *       404:
+ *         description: Indicador não encontrado
+ */
+router.post(
+  '/indicadores/:id/pontos',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.criarPontoIndicador(req, res)
+);
+
+
+/**
+ * @swagger
+ * /admin/indicadores/{id}:
+ *   get:
+ *     summary: Busca um parceiro indicador por ID
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Indicador encontrado
+ *       404:
+ *         description: Indicador não encontrado
+ */
+router.get(
+  '/indicadores/:id',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.buscarIndicadorPorId(req, res)
+);
+
+
+/**
+ * @swagger
+ * /admin/indicadores/{id}:
+ *   put:
+ *     summary: Atualiza um parceiro indicador
+ *     tags: [Admin - Gestão de Indicadores]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
  *     requestBody:
  *       required: true
  *       content:
@@ -904,9 +911,14 @@ router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res
  *             properties:
  *               nome:
  *                 type: string
+ *               nomeResposavel:
+ *                 type: string
  *               tipo:
  *                 type: string
- *                 enum: [ASSOCIACAO, COOPERATIVA, ONG]
+ *                 enum:
+ *                   - ASSOCIACAO
+ *                   - COOPERATIVA
+ *                   - ONG
  *               cnpj:
  *                 type: string
  *               email:
@@ -916,23 +928,29 @@ router.get('/indicadores/ativos', AuthMiddleware.requireRole('admin'), (req, res
  *                 type: string
  *               site:
  *                 type: string
+ *               municipio:
+ *                 type: string
  *               ativo:
  *                 type: boolean
  *     responses:
  *       200:
- *         description: Indicador atualizado com sucesso
+ *         description: Indicador atualizado
  *       404:
  *         description: Indicador não encontrado
  */
-router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.atualizarIndicador(req, res)
+router.put(
+  '/indicadores/:id',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.atualizarIndicador(req, res)
 );
+
 
 /**
  * @swagger
  * /admin/indicadores/{id}:
  *   delete:
- *     summary: Exclui um parceiro indicador (apenas admin)
+ *     summary: Exclui um parceiro indicador
  *     tags: [Admin - Gestão de Indicadores]
  *     security:
  *       - bearerAuth: []
@@ -942,17 +960,16 @@ router.put('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) =
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID do indicador
  *     responses:
  *       204:
- *         description: Indicador excluído com sucesso
- *       403:
- *         description: Acesso negado (não é admin)
+ *         description: Indicador excluído
  *       404:
  *         description: Indicador não encontrado
  */
-router.delete('/indicadores/:id', AuthMiddleware.requireRole('admin'), (req, res) => 
-  adminController.excluirIndicador(req, res)
+router.delete(
+  '/indicadores/:id',
+  AuthMiddleware.requireRole('admin'),
+  (req, res) =>
+    adminController.excluirIndicador(req, res)
 );
-
 export default router;

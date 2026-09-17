@@ -16,5 +16,8 @@ export interface IParceiroRepository {
   findAll(): Promise<Parceiro[]>;
   getParceirosIndicadores(): Promise<any[]>;
   delete(id: number): Promise<void>;
+  findByIndicadorOrigemId(
+  indicadorId: number
+): Promise<Parceiro | null>;
 
 }

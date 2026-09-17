@@ -1,6 +1,7 @@
 export interface ParceiroIndicadorDTO {
   id: number;
   nome: string;
+  nomeResposavel: string;
   tipo: 'ASSOCIACAO' | 'COOPERATIVA' | 'ONG';
   cnpj: string;
   email: string | null;
@@ -8,4 +9,5 @@ export interface ParceiroIndicadorDTO {
   site: string | null;
   ativo: boolean;
   criadoEm: Date;
+  municipio: string;
 }

@@ -235,12 +235,14 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
             responsavel_legal,
             aceite_marketing,
             parceiro_indicador_id,
+            indicador_origem_id,
+            primeiro_acesso,
             como_conheceu,
             observacao,
             status_aprovacao_parceiro,
             redes_sociais
-          )
-          VALUES (
+        )
+        VALUES (
             $1,
             $2,
             $3,
@@ -255,9 +257,11 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
             $12,
             $13,
             $14,
-            $15::jsonb
-          )
-          RETURNING *
+            $15,
+            $16,
+            $17::jsonb
+        )
+        RETURNING *
         `,
         [
           data.tipoPessoa,
@@ -281,7 +285,9 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
           Boolean(data.aceiteMarketing),
 
           parceiroIndicadorIdFinal,
+            data.indicadorOrigemId ?? null,
 
+            data.primeiroAcesso ?? false,
           comoConheceuFinal,
 
           data.observacao?.trim()
@@ -567,6 +573,25 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
           data.senhaHash
         );
       }
+      if (data.indicadorOrigemId !== undefined) {
+        fields.push(
+            `indicador_origem_id = $${index++}`
+        );
+
+        values.push(
+            data.indicadorOrigemId
+        );
+        }
+
+        if (data.primeiroAcesso !== undefined) {
+        fields.push(
+            `primeiro_acesso = $${index++}`
+        );
+
+        values.push(
+            data.primeiroAcesso
+        );
+        }
 
       if (fields.length === 0) {
         const parceiro = await this.findById(id);
@@ -718,7 +743,28 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
       );
     }
   }
+async findByIndicadorOrigemId(
+  indicadorId: number
+): Promise<Parceiro | null> {
 
+  const result = await pool.query(
+    `
+    SELECT *
+    FROM parceiros
+    WHERE indicador_origem_id = $1
+    LIMIT 1
+    `,
+    [indicadorId]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  return this.mapToEntity(
+    result.rows[0]
+  );
+}
   async findAll(): Promise<Parceiro[]> {
     try {
       const result = await pool.query(
@@ -850,6 +896,10 @@ export class DBScriptParceiroRepository implements IParceiroRepository {
         data.criado_em,
       updatedEm:
         data.updated_at,
+    indicadorOrigemId:
+        data.indicador_origem_id ?? null,
+    primeiroAcesso:
+        data.primeiro_acesso ?? false,
     } as Parceiro;
   }
 }

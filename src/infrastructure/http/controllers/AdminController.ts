@@ -233,47 +233,346 @@ export class AdminController {
     }
   }
 
-  // ===================== PARCEIROS INDICADORES (NOVOS) =====================
-  async criarIndicador(req: Request, res: Response): Promise<void> {
-    try {
-      const indicador = await this.adminUseCase.criarIndicador(req.body);
-      res.status(201).json(indicador);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
-      res.status(400).json({ message });
-    }
+ // ============================================================
+// PARCEIROS INDICADORES
+// ============================================================
+
+async criarIndicador(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicador =
+      await this.adminUseCase.criarIndicador(
+        req.body
+      );
+
+    res.status(201).json(indicador);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
   }
+}
 
 
-  async listarIndicadoresAtivos(req: Request, res: Response): Promise<void> {
-    try {
-      const indicadores = await this.adminUseCase.listarIndicadoresAtivos();
-      res.status(200).json(indicadores);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
-      res.status(400).json({ message });
-    }
-  }
+// ============================================================
+// LISTAR INDICADORES
+// ============================================================
 
-  async atualizarIndicador(req: Request, res: Response): Promise<void> {
-    try {
-      const indicador = await this.adminUseCase.atualizarIndicador(Number(req.params.id), req.body);
-      res.json(indicador);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
-      res.status(400).json({ message });
-    }
-  }
+async listarIndicadoresAtivos(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicadores =
+      await this.adminUseCase
+        .listarIndicadoresAtivos();
 
-  async excluirIndicador(req: Request, res: Response): Promise<void> {
-    try {
-      await this.adminUseCase.excluirIndicador(Number(req.params.id));
-      res.status(204).send();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Erro inesperado';
-      res.status(400).json({ message });
-    }
+    res.status(200).json(
+      indicadores
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
   }
+}
+
+
+// ============================================================
+// BUSCAR INDICADOR POR ID
+// ============================================================
+
+async buscarIndicadorPorId(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicadorId =
+      Number(req.params.id);
+
+    if (
+      !indicadorId ||
+      Number.isNaN(indicadorId)
+    ) {
+      res.status(400).json({
+        message:
+          'ID do parceiro indicador inválido',
+      });
+
+      return;
+    }
+
+    const indicador =
+      await this.adminUseCase
+        .buscarIndicadorPorId(
+          indicadorId
+        );
+
+    if (!indicador) {
+      res.status(404).json({
+        message:
+          'Parceiro indicador não encontrado',
+      });
+
+      return;
+    }
+
+    res.status(200).json(
+      indicador
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
+  }
+}
+
+
+// ============================================================
+// ATUALIZAR INDICADOR
+// ============================================================
+
+async atualizarIndicador(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicadorId =
+      Number(req.params.id);
+
+    if (
+      !indicadorId ||
+      Number.isNaN(indicadorId)
+    ) {
+      res.status(400).json({
+        message:
+          'ID do parceiro indicador inválido',
+      });
+
+      return;
+    }
+
+    const indicador =
+      await this.adminUseCase
+        .atualizarIndicador(
+          indicadorId,
+          req.body
+        );
+
+    res.status(200).json(
+      indicador
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
+  }
+}
+
+
+// ============================================================
+// EXCLUIR INDICADOR
+// ============================================================
+
+async excluirIndicador(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicadorId =
+      Number(req.params.id);
+
+    if (
+      !indicadorId ||
+      Number.isNaN(indicadorId)
+    ) {
+      res.status(400).json({
+        message:
+          'ID do parceiro indicador inválido',
+      });
+
+      return;
+    }
+
+    await this.adminUseCase
+      .excluirIndicador(
+        indicadorId
+      );
+
+    res.status(204).send();
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
+  }
+}
+
+
+// ============================================================
+// CRIAR PONTO PARA O INDICADOR
+//
+// Essa é a parte principal da arquitetura nova.
+//
+// Indicador
+//      ↓
+// Parceiro Local
+//      ↓
+// Ponto de coleta
+// ============================================================
+
+async criarPontoIndicador(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicadorId =
+      Number(req.params.id);
+
+    if (
+      !indicadorId ||
+      Number.isNaN(indicadorId)
+    ) {
+      res.status(400).json({
+        message:
+          'ID do parceiro indicador inválido',
+      });
+
+      return;
+    }
+
+    const result =
+      await this.adminUseCase
+        .criarPontoColetaIndicador(
+          indicadorId,
+          req.body
+        );
+
+    /*
+     * result terá:
+     *
+     * {
+     *   ponto: {...},
+     *
+     *   parceiro: {
+     *      id,
+     *      email
+     *   },
+     *
+     *   acesso: {
+     *      email,
+     *      senhaTemporaria,
+     *      primeiroAcesso
+     *   } | null
+     * }
+     *
+     * acesso será null quando o Parceiro Local
+     * já existia.
+     */
+
+    res.status(201).json({
+      message:
+        result.acesso
+          ? 'Ponto de coleta e acesso do parceiro criados com sucesso'
+          : 'Ponto de coleta criado com sucesso',
+
+      ponto:
+        result.ponto,
+
+      parceiro:
+        result.parceiro,
+
+      acesso:
+        result.acesso,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
+  }
+}
+
+
+// ============================================================
+// LISTAR PONTOS DO INDICADOR
+// ============================================================
+
+async listarPontosIndicador(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const indicadorId =
+      Number(req.params.id);
+
+    if (
+      !indicadorId ||
+      Number.isNaN(indicadorId)
+    ) {
+      res.status(400).json({
+        message:
+          'ID do parceiro indicador inválido',
+      });
+
+      return;
+    }
+
+    const pontos =
+      await this.adminUseCase
+        .listarPontosDoIndicador(
+          indicadorId
+        );
+
+    res.status(200).json({
+      indicadorId,
+
+      quantidade:
+        pontos.length,
+
+      pontos,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Erro inesperado';
+
+    res.status(400).json({
+      message,
+    });
+  }
+}
   async atualizarAdmin(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
